@@ -1,0 +1,31 @@
+{
+  "name": "lex-cells",
+  "version": "1.0.0",
+  "description": "lex-cells",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "concurrently": "^5.1.0",
+    "nodemon": "^2.0.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "client-install": "npm install --prefix client",
+    "client": "npm run start --prefix client",
+    "sass": "sass --watch client/src/assets/styles/input.scss:client/src/assets/styles/output.css",
+    "server": "nodemon index.js",
+    "server:debug": "nodemon --inspect index.js",
+    "dev-debug": "concurrently \"npm run server:debug\" \"npm run client\"",
+    "dev": "concurrently \"npm run dev-debug\" \"npm run sass\"",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stkterry/lex-cells.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
