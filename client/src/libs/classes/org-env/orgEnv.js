@@ -1,6 +1,6 @@
 import * as mjs from "matter-js";
 
-import Org from "../org";
+import Org from "../org/org";
 import { boundsOffset } from "./orgEnv-config";
 
 const Bodies = mjs.Bodies;
@@ -23,10 +23,10 @@ class OrgEnv {
 
   addNOrgs(n) {
     let newOrgs = Array.from({ length: n },
-      () => new Org(...this.randXY()));
+      () => new Org(...this.randXY(), this.world));
+      this.organisms.push(...newOrgs);
       
-    World.add(this.world, newOrgs.map(org => org.body));
-    this.organisms.push(...newOrgs);
+    // World.add(this.world, newOrgs.map(org => org.body));
   }
 
   moveOrgs() {
@@ -38,7 +38,7 @@ class OrgEnv {
   }
 
   dispOrgShapes() {
-    for (let org of this.organisms) org.disp2(this.p);
+    for (let org of this.organisms) org.disp(this.p);
   }
 
   randXY() {

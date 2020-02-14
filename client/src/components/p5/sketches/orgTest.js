@@ -19,7 +19,7 @@ const testSketch = (p) => {
     canvas = p.createCanvas(CS.w, CS.h);
     
     orgEnv = new OrgEnv(p, engine, CS.w, CS.h);
-    orgEnv.addNOrgs(50);
+    orgEnv.addNOrgs(10);
     // const world = engine.world;
     Engine.run(engine);
     p.noStroke();
@@ -32,8 +32,8 @@ const testSketch = (p) => {
   p.draw = () => {
     p.background(0);
 
-    // orgEnv.moveOrgs();
-    // orgEnv.dispOrgShapes();
+    orgEnv.moveOrgs();
+    orgEnv.dispOrgShapes();
 
   }
 }
