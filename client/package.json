@@ -27,7 +27,9 @@
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
+    "matter-js": "^0.14.2",
     "p5": "^0.10.2",
+    "poly-decomp": "^0.3.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-p5-wrapper": "^2.0.0",

@@ -2,7 +2,7 @@ import React from "react";
 // import p5 from "../../libs/p5";
 import P5Wrapper from "react-p5-wrapper";
 
-import testSketch from "./sketches/test";
+import orgSketch from "./sketches/orgTest";
 
 class SketchBox extends React.Component {
   constructor() {
@@ -17,7 +17,7 @@ class SketchBox extends React.Component {
   render() {
     return(
       <div className="sketch">
-        <P5Wrapper sketch={testSketch}></P5Wrapper>
+        <P5Wrapper sketch={orgSketch}></P5Wrapper>
       </div>
     )
     
