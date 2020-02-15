@@ -29,8 +29,9 @@ const testSketch = (p) => {
   p.draw = () => {
     p.background(0);
 
-    orgEnv.moveOrgs();
     orgEnv.dispOrgs();
+    orgEnv.moveOrgs();
+    // p.noLoop();
 
   }
 }

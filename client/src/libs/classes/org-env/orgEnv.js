@@ -16,20 +16,6 @@ class OrgEnv {
     this.organisms = [];
   }
 
-  // addNOrgs(n) {
-  //   // let newOrgs = Array.from({ length: n },
-  //   //   () => new Org(...this.randXY(), this.mjsi));
-  //   // this.organisms.push(...newOrgs);
-
-  //   let orgs = [];
-  //   while (orgs.length < n) {
-  //     let org = new Org(...this.randXY(), this.mjsi);
-  //     if (OrgEnv.overlaps(org, orgs) ) continue;
-  //     orgs.push(org);
-  //   }
-  //   this.organisms.push(...orgs);
-  // }
-
   addNOrgs2(n) {
     let orgs = [];
     while (orgs.length < n) {

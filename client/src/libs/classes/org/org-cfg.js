@@ -6,6 +6,16 @@ export const minGeneLength = 2; // min gene effect
 export const baseRepCost = 40;
 export const geneRepCost = 3;
 
+export const minBodySize = 10;
+export const cellScale = 1;
+export const cellBodyDefaults = {
+  mass: 10,
+  frictionAir: 0.01,
+}
+export const cellDefaults = {
+  maxCellVel: 0.01
+}
+
 export const baseColors = new Set(
   ['red', 'gray', 'green', 'black']
 )

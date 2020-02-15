@@ -44,7 +44,6 @@ export class MJSWrapper {
 
   addCircle({ x = 0, y = 0, r = 10, options = {} }) {
     let body = Bodies.circle(x, y, r, options);
-
     this.addBody(body);
     return body;
   }
