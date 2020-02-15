@@ -1,3 +1,3 @@
 
 
-export const boundsOffset = 50;
+export const boundsThickness = 50;

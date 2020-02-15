@@ -11,29 +11,26 @@ const testSketch = (p) => {
   const Engine = mjs.Engine;
   const World = mjs.World;
   const Bodies = mjs.Bodies;
-
-  const engine = Engine.create();
   var orgEnv;
 
   p.setup = () => {
+    p.disableFriendlyErrors = true; 
     canvas = p.createCanvas(CS.w, CS.h);
     
-    orgEnv = new OrgEnv(p, engine, CS.w, CS.h);
-    orgEnv.addNOrgs(10);
-    // const world = engine.world;
-    Engine.run(engine);
-    p.noStroke();
+    orgEnv = new OrgEnv(p, CS.w, CS.h);
+    orgEnv.addNOrgs2(10);
+    orgEnv.mjsi.run();
+    // p.stroke('black')
+    // p.noStroke();
 
-
-
-
+    // console.log(orgEnv.organisms)
   }
 
   p.draw = () => {
     p.background(0);
 
     orgEnv.moveOrgs();
-    orgEnv.dispOrgShapes();
+    orgEnv.dispOrgs();
 
   }
 }
