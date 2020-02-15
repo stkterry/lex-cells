@@ -1,5 +1,5 @@
 
-import { randBaseGeneColor, randGeneColor, randNumGenes, minBodySize,
+import { randBaseGeneColor, randGeneColor, randNumGenes, minBodySize, cellScale,
   geneColors, baseColors, cellBodyDefaults, cellDefaults } from "./org-cfg";
 import { getGene } from "./gene";
 
@@ -10,7 +10,7 @@ class Org {
     this.numGenes = randNumGenes(); // pick random segment total
     Object.assign(this, this.collectGenes(x, y));
 
-    this.r = this.bodySize(this.genes); // requires genes to be known...
+    this.r = cellScale * this.bodySize(this.genes); // requires genes to be known...
     this.body = this.mjsi.addCircle(
       { x: x, y: y, r: this.r, options: cellBodyDefaults }
     );
@@ -18,8 +18,8 @@ class Org {
     Object.assign(this, this.constrainGenesToBody()); // Needs this.r to constrain bodies...
     
     let [wall, wallConstraints] = this.mjsi.addSoftCircle(
-      { x: x, y: y, r: this.wallR+3, thickness: 6, 
-        nSegs: 16, options: { mass: 0 } }
+      { x: x, y: y, r: this.wallR+5, thickness: 10, 
+        nSegs: 12, options: { mass: 0 } }
     )
     this.wall = wall;
     this.wallConstraints = wallConstraints;
@@ -55,10 +55,9 @@ class Org {
     p.stroke(this.genes[0].color)
     p.beginShape();
     for (let seg of this.wall) {
-      p.vertex(seg.position.x, seg.position.y)
+      p.curveVertex(seg.position.x, seg.position.y)
     }
-    p.vertex(this.wall[0].position.x, this.wall[0].position.y)
-    p.endShape();
+    p.endShape(p.CLOSE);
   
     p.stroke('black')
     p.fill(this.baseColor)
@@ -89,7 +88,6 @@ class Org {
   }
 
   collectGenes(x, y) {
-    let diff = 10;
     let genes = [], geneBodies = [];
     let gene;
     genes[0] = randBaseGeneColor();
@@ -100,9 +98,9 @@ class Org {
     for (let i = 0; i < genes.length; i++) {
       genes[i] = getGene(genes[i]);
       genes[i].body = this.mjsi.addCircle({
-        x: x + minBodySize*Math.random() - minBodySize/2,
-        y: y + minBodySize*Math.random() - minBodySize/2,
-        r: genes[i].length,
+        x: x + cellScale * (minBodySize*Math.random() - minBodySize/2),
+        y: y + cellScale * (minBodySize*Math.random() - minBodySize/2),
+        r: cellScale * genes[i].length,
         options: {mass: 0}
       })
       geneBodies.push(genes[i].body);
@@ -117,7 +115,7 @@ class Org {
     let geneConstraints = [];
     let wallR = 0, len = 0;
     for (let gene of this.genes) {
-      len = (this.r + gene.length) * (1 + Math.random() / 2);
+      len = (this.r + cellScale*gene.length) * (1 + cellScale * Math.random() / 2);
       wallR = (len + gene.length > wallR) ? (len + gene.length) : wallR;
       let options = {
         bodyA: this.body,

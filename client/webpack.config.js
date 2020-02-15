@@ -36,5 +36,6 @@ module.exports = {
     port: 3001,
     publicPath: "http://localhost:3001",
     // hotOnly: true
-  }
+  },
+  devtool: 'inline-source-map'
 };

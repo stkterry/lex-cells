@@ -1,5 +1,5 @@
 // Gene types, red, green, black, gray, yellow, blue, cyan, white 
-import { randGeneLength } from "./org-cfg";
+import { randGeneLength, cellScale } from "./org-cfg";
 
 class BaseGene {
   constructor(length) {
@@ -10,7 +10,7 @@ class BaseGene {
 
   disp(p) {
     p.fill(this.color);
-    p.circle(this.body.position.x, this.body.position.y, this.length*2)
+    p.circle(this.body.position.x, this.body.position.y, cellScale * this.length*2)
   }
 
   getEnergy() {

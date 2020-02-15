@@ -1,4 +1,5 @@
 import * as mjs from "matter-js";
+// import CCapture from "ccapture.js";
 
 import OrgEnv from "../../../libs/classes/org-env/orgEnv";
 import { CS } from "./orgConfig";
@@ -12,7 +13,9 @@ const testSketch = (p) => {
   const World = mjs.World;
   const Bodies = mjs.Bodies;
   var orgEnv;
-
+  // var capturer = new CCapture({ format: 'gif', workersPath: 'js/' });
+  // var capturer = new CCapture({ format: 'webm' });
+  var started = false;
   p.setup = () => {
     p.disableFriendlyErrors = true; 
     canvas = p.createCanvas(CS.w, CS.h);
@@ -24,6 +27,9 @@ const testSketch = (p) => {
     // p.noStroke();
 
     // console.log(orgEnv.organisms)
+    
+    // capturer.capture(document.getElementById('defaultCanvas0'));
+
   }
 
   p.draw = () => {
@@ -31,7 +37,6 @@ const testSketch = (p) => {
 
     orgEnv.dispOrgs();
     orgEnv.moveOrgs();
-    // p.noLoop();
 
   }
 }
