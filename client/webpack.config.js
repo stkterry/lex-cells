@@ -35,6 +35,7 @@ module.exports = {
     contentBase: path.join(__dirname, "public/"),
     port: 3001,
     publicPath: "http://localhost:3001",
-    hotOnly: true
-  }
+    // hotOnly: true
+  },
+  devtool: 'inline-source-map'
 };
