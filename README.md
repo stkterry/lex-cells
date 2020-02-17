@@ -55,7 +55,7 @@ reproduction.  For now movement is random.
   * *White* - Kills on contact
   * *Blue* - Defensive barrier, cannot be harmed or infected
 
-### Attribute Boost
+#### Attribute Boost
   * *Yellow* - Increases fertility.
 
 ## Visualization
