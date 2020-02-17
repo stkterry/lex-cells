@@ -29,9 +29,21 @@ export class MJSWrapper {
     Runner.tick(this.runner, this.engine, delta);
   }
 
-  addConstraint(options) {
+  createComposite(options) {
+    let composite = Composite.create(options);
+    this.addBody(composite);
+    return composite
+  }
+
+  addToComposite(composite, ...elements) {
+    Composite.add(composite, ...elements)
+    return composite  
+  }
+
+  addConstraint(options, composite=null) {
     let constraint = Constraint.create(options);
-    World.add(this.world, constraint);
+    if (composite) Composite.add(composite, constraint);
+    else World.add(this.world, constraint);
     return constraint;
   }
 
@@ -55,9 +67,12 @@ export class MJSWrapper {
     return body;
   }
 
-  addCircle({ x = 0, y = 0, r = 10, options = {} } = {}) {
+
+  addCircle({ x = 0, y = 0, r = 10, composite = null, options = {} } = {}) {
     let body = Bodies.circle(x, y, r, options);
-    this.addBody(body);
+
+    if (composite) Composite.add(composite, body);
+    else this.addBody(body);
 
     return body;
   }
@@ -87,7 +102,11 @@ export class MJSWrapper {
   } 
 
 
-  addSoftCircle({ x = 0, y = 0, r = 200, thickness = 20, nSegs = 16, options = {} } = {}) {
+  addSoftCircle({ 
+    x = 0, y = 0, r = 200, thickness = 20, 
+    nSegs = 16, composite = null, options = {} } = {}) {
+
+
     let angDel = TAU / nSegs; // Angle each segment covers.
     let adjAng = Math.tan(angDel / 2); // The adjacent angle from the circle radius in relation to w of the rect
     let h = thickness; // h is the height of the rect but thickness of the circle we're creating.
@@ -103,7 +122,6 @@ export class MJSWrapper {
       let rect = Bodies.rectangle(sx, sy, w, h, 
         { angle: angle - PI / 2, collisionFilter: { group: -1 } })
       segments.push(rect);
-      World.add(this.world, rect);
     }
 
     segments.push(segments[0]);
@@ -130,17 +148,20 @@ export class MJSWrapper {
       }
       let constraint = Constraint.create(optsEdge);
       constraints.push(constraint);
-      World.add(this.world, constraint);
+    }
+    segments.pop();
+
+    if (composite) {
+      let wallComposite = Composite.create({ label: 'wall' });
+      Composite.add(wallComposite, segments);
+      Composite.add(wallComposite, constraints);
+      Composite.add(composite, wallComposite);
+    } else {
+      for (let segment in segments) World.add(this.world, segment);
+      for (let constraint in constraints) World.add(this.world, constraint);
     }
 
-    segments.pop();
     return [segments, constraints]
-
-
-    // let circle = Body.create({ parts: segments });
-    // Body.setPosition(circle, { x: x, y: y })
-    // World.add(this.world, circle)
-    // return circle;
   } 
 
   setWorldBounds(w, h, boundsThickness) {
@@ -176,27 +197,3 @@ export class MJSWrapper {
   }
 
 }
-
-export function addTrapezoid({ x = 0, y = 0, w = 10, h = 10, slope = 0, options = {} }) {
-  let body = Bodies.trapezoid(x, y, w, h, slope, options);
-  // addBody(body);
-  return body;
-}
-
-export function addRect({ x = 0, y = 0, w = 10, h = 10, options = {} }) {
-  let body = Bodies.rectangle(x, y, w, h, options);
-  // addBody(body);
-  return body;
-}
-
-export function addCircle({ x = 0, y = 0, r = 10, options = {} }) {
-  let body = Bodies.circle(x, y, r, options);
-  // addBody(body);
-  return body;
-}
-
-// module.exports = {
-//   addTrapezoid,
-//   addRect,
-//   addCircle 
-// }

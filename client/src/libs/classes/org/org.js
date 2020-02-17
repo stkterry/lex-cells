@@ -8,8 +8,9 @@ import { getExpression } from "./gene-expression";
 class Org {
   constructor(x = 0, y = 0, mjsi) {
     this.mjsi = mjsi;
+    this.composite = this.mjsi.createComposite({'label': 'cell'})
 
-    this.genes = this.constructor.getNewGenes();
+    this.getNewGenes();
 
     this.getNewNucleus(x, y);
     this.pos = this.nucleus.body.position;
@@ -27,12 +28,10 @@ class Org {
     this.setBase(); // Set the baseGene name as well as actual colors to be painted.
     // baseGene, baseColor, cytoColor, nuclColor
 
-    // console.log(this.expressions)
+    console.log(this.composite)
   }
 
-
-  static
-    getNewGenes() {
+  getNewGenes() {
     let numSegments = randNumGenes(); // Get the number of gene segments to create.
 
     let genes = { // Setup inital genes object
@@ -59,7 +58,7 @@ class Org {
     genes['avgGeneArea'] = Math.sqrt(genes.segments // Get avg gene area.
       .reduce((total, gene) => total + gene.length * gene.length, 0))
 
-    return genes;
+    this.genes = genes;
   }
 
   getNewNucleus(x, y) {
@@ -69,13 +68,12 @@ class Org {
     bodyRadius = cellScale * bodyRadius;
     this.nucleus = {
       body: this.mjsi.addCircle(
-        { x: x, y: y, r: bodyRadius, options: cellBodyDefaults }
+        { x: x, y: y, r: bodyRadius, 
+          options: {...cellBodyDefaults, label: 'nucleus' },
+          composite: this.composite }
       ), 
       r: bodyRadius
     }
-    // bodyRadius = cellScale * bodyRadius; // Set scale of object.
-    // let body = 
-    // return [bodyRadius, body];
   }
 
   getNewExpressions() {
@@ -93,7 +91,7 @@ class Org {
     }
 
     let maxConstraintDist = 0;
-    for (const [_, exp] of Object.entries(this.expressions)) {
+    for (const [color, exp] of Object.entries(this.expressions)) {
 
       let constraintDist = (this.nucleus.r + cellScale * exp.avgLength) // Distance between nucleus and gene expression.
         * (1 + cellScale * Math.random() / 3);
@@ -108,7 +106,8 @@ class Org {
         y: this.pos.y
           + cellScale * (minBodySize * Math.random() - minBodySize / 2),
         r: cellScale * exp.avgLength,
-        options: { mass: 0 }
+        options: { mass: 0, label: 'expression-' + color },
+        composite: this.composite
       })
       
       let constraintOptions = {
@@ -122,6 +121,7 @@ class Org {
 
       exp.body = expBody;
       // exp.constraint = expConstraint;
+
     }
 
     if (this.wall) this.wall['r'] = maxConstraintDist;
@@ -133,9 +133,11 @@ class Org {
     let thickness = 10;
     let offset = thickness / 2;
     let [segments, constraints] = this.mjsi.addSoftCircle(
-      { x: this.pos.x, y: this.pos.y, r: this.wall.r + offset, thickness: thickness,
-        nSegs: 8, options: { mass: 1 } }
+      { x: this.pos.x, y: this.pos.y, r: this.wall.r + offset, 
+        thickness: thickness, nSegs: 8, 
+        composite: this.composite, options: { mass: 1 } }
     )
+
     this.wall['segments'] = segments;
     this.wall['constraints'] = constraints;
   }
@@ -147,20 +149,11 @@ class Org {
     this.nuclColor = [...this.baseColor, 10];
   }
 
-
-  moveRandom() {
-    let vx = this.maxCellVel * Math.random() - this.maxCellVel / 2;
-    let vy = this.maxCellVel * Math.random() - this.maxCellVel / 2;
-    this.applyForce({ x: vx, y: vy })
-  }
-
   update() {
     if ("cyan" in this.expressions) {
       this.expressions["cyan"].activate();
-    }
-
+    } 
   }
-
 
   disp(p) {
     p.fill(this.cytoColor)
@@ -197,9 +190,6 @@ class Org {
   removeBody() {
     this.mjsi.removeBody(this.nucleus.body);
   }
-
-
-
 }
 
 export default Org;

@@ -1,11 +1,11 @@
 import React from "react";
 import Form from "./Form";
-import SketchBox from "./p5/SketchBox";
+import BackgroundTest from "./p5/BackgroundTest";
 
 const App = () => {
   return (
     <div>
-    <SketchBox />
+    <BackgroundTest />
 
     </div>
   )
