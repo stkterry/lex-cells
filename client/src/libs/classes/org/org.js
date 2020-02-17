@@ -118,10 +118,10 @@ class Org {
         stiffness: 0
       }
 
-      let expConstraint = this.mjsi.addConstraint(constraintOptions);
+      // let expConstraint = this.mjsi.addConstraint(constraintOptions);
 
       exp.body = expBody;
-      exp.constraint = expConstraint;
+      // exp.constraint = expConstraint;
     }
 
     if (this.wall) this.wall['r'] = maxConstraintDist;
@@ -167,7 +167,7 @@ class Org {
     p.stroke(this.baseColor)
     p.beginShape();
     for (let seg of this.wall.segments) {
-      p.vertex(seg.position.x, seg.position.y)
+      p.curveVertex(seg.position.x, seg.position.y)
     }
     p.endShape(p.CLOSE);
 
