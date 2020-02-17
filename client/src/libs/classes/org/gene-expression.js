@@ -91,7 +91,6 @@ export class CyanExpression extends BaseExpression {
 
     // Movement!
     this.lim = maxCellVel * (this.length / (1 + this.length));
-    console.log(this.lim)
     this.applyForce = MJSWrapper.getApplyForceToCenter(body);
   }
 

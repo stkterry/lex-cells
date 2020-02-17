@@ -10,10 +10,6 @@ class SketchBox extends React.Component {
     this.state = {};
   }
 
-  // componentDidMount() {
-  //   const sketch = new p5(sketch)
-  // }
-
   render() {
     return(
       <div className="sketch">

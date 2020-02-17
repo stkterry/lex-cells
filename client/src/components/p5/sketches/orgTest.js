@@ -29,16 +29,33 @@ const testSketch = (p) => {
 
     // console.log(orgEnv.organisms)
     
-
+    
   }
 
   p.draw = () => {
     p.background(0);
 
+    // if (p.millis()/1000 >= 1 && p.millis()/1000 < 2) {
+    //   started = true;
+    //   capturer.start();
+    // }
+
     
     orgEnv.dispOrgs();
     orgEnv.updateEnv();
     orgEnv.mjsi.nextTick(p.frameRate()/60)
+
+  //   if (started) {
+  //     capturer.capture(document.getElementById("defaultCanvas0"));
+  //     // capturer.capture(canvas);
+  //   }
+
+  //   if (p.millis()/1000 >= 15) {
+  //     started = false;
+  //     capturer.stop();
+  //     capturer.save();
+  //     p.noLoop();
+  //   }
   }
 }
 
