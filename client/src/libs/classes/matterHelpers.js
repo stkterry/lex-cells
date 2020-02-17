@@ -6,6 +6,7 @@ const World = mjs.World;
 const Constraint = mjs.Constraint;
 const Engine = mjs.Engine;
 const Composite = mjs.Composite;
+const Runner = mjs.Runner;
 
 const TAU = Math.PI * 2;
 const PI = Math.PI;
@@ -13,6 +14,7 @@ const PI = Math.PI;
 export class MJSWrapper {
   constructor() {
     this.engine = Engine.create();
+    this.runner = Runner.create();
     this.world = this.engine.world;
 
     this.Body = mjs.Body;
@@ -20,6 +22,17 @@ export class MJSWrapper {
     this.Constraint = mjs.Constraint;
     this.Engine = mjs.Engine;
     this.Composite = mjs.Composite;
+    this.Runner = mjs.Runner;
+  }
+
+  nextTick(delta) {
+    Runner.tick(this.runner, this.engine, delta);
+  }
+
+  addConstraint(options) {
+    let constraint = Constraint.create(options);
+    World.add(this.world, constraint);
+    return constraint;
   }
 
   addBody(...bodies) {
@@ -42,9 +55,10 @@ export class MJSWrapper {
     return body;
   }
 
-  addCircle({ x = 0, y = 0, r = 10, options = {} }) {
+  addCircle({ x = 0, y = 0, r = 10, options = {} } = {}) {
     let body = Bodies.circle(x, y, r, options);
     this.addBody(body);
+
     return body;
   }
 

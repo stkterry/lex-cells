@@ -21,23 +21,24 @@ const testSketch = (p) => {
     canvas = p.createCanvas(CS.w, CS.h);
     
     orgEnv = new OrgEnv(p, CS.w, CS.h);
-    orgEnv.addNOrgs2(10);
-    orgEnv.mjsi.run();
+    // orgEnv.mjsi.engine.positionIterations = 2;
+    // orgEnv.mjsi.engine.velocityIterations = 2;
+    orgEnv.addNOrgs(50);
     // p.stroke('black')
     // p.noStroke();
 
     // console.log(orgEnv.organisms)
     
-    // capturer.capture(document.getElementById('defaultCanvas0'));
 
   }
 
   p.draw = () => {
     p.background(0);
 
+    
     orgEnv.dispOrgs();
-    orgEnv.moveOrgs();
-
+    orgEnv.updateEnv();
+    orgEnv.mjsi.nextTick(p.frameRate()/60)
   }
 }
 

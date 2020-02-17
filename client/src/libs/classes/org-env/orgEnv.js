@@ -1,4 +1,3 @@
-import * as mjs from "matter-js";
 import { MJSWrapper } from "../matterHelpers";
 
 import Org from "../org/org";
@@ -16,7 +15,7 @@ class OrgEnv {
     this.organisms = [];
   }
 
-  addNOrgs2(n) {
+  addNOrgs(n) {
     let orgs = [];
     while (orgs.length < n) {
       let org = new Org(...this.randXY(), this.mjsi);
@@ -31,20 +30,26 @@ class OrgEnv {
 
   kill(org) {
     org.removeWall();
-    org.removeGenes();
+    org.removeExpressions();
     org.removeBody();
-    this.mjsi.removeBody(org)
   }
 
   static
   overlaps(bOrg, orgs) {
     for (let aOrg of orgs) {
-      let dx = aOrg.body.position.x - bOrg.body.position.x;
-      let dy = aOrg.body.position.y - bOrg.body.position.y;
-      let t = aOrg.r*2.5 + bOrg.r*2.5;
+      let dx = aOrg.pos.x - bOrg.pos.x;
+      let dy = aOrg.pos.y - bOrg.pos.y;
+      let t = aOrg.wall.r + bOrg.wall.r;
       if (t*t > dx*dx + dy*dy) return true;
     }
     return false;
+  }
+
+  updateEnv() {
+    for (let i = 0; i < this.organisms.length; i++) {
+      this.organisms[i].update();
+      // console.log(this.organisms[i])
+    }
   }
 
   moveOrgs() {

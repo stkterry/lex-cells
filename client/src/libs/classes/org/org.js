@@ -1,143 +1,203 @@
 
-import { randBaseGeneColor, randGeneColor, randNumGenes, minBodySize, cellScale,
-  geneColors, baseColors, cellBodyDefaults, cellDefaults } from "./org-cfg";
-import { getGene } from "./gene";
+import {
+  randBaseGeneColor, randGeneColor, randNumGenes, minBodySize, cellScale,
+  baseColors, cellBodyDefaults, cellDefaults, randGeneLength
+} from "./org-cfg";
+import { getExpression } from "./gene-expression";
 
 class Org {
-  constructor(x=0, y=0, mjsi) {
-    this.mjsi = mjsi; // matter.js wrapper instance.
+  constructor(x = 0, y = 0, mjsi) {
+    this.mjsi = mjsi;
 
-    this.numGenes = randNumGenes(); // pick random segment total
-    Object.assign(this, this.collectGenes(x, y));
+    this.genes = this.constructor.getNewGenes();
 
-    this.r = cellScale * this.bodySize(this.genes); // requires genes to be known...
-    this.body = this.mjsi.addCircle(
-      { x: x, y: y, r: this.r, options: cellBodyDefaults }
-    );
+    this.getNewNucleus(x, y);
+    this.pos = this.nucleus.body.position;
+    this.diameter = this.nucleus.r * 2;
 
-    Object.assign(this, this.constrainGenesToBody()); // Needs this.r to constrain bodies...
-    
-    let [wall, wallConstraints] = this.mjsi.addSoftCircle(
-      { x: x, y: y, r: this.wallR+5, thickness: 10, 
-        nSegs: 12, options: { mass: 0 } }
-    )
-    this.wall = wall;
-    this.wallConstraints = wallConstraints;
+    this.getNewExpressions()
+
+    this.getNewWall();
 
     this.applyForce = this.mjsi.constructor
-      .getApplyForceToCenter(this.body);
+      .getApplyForceToCenter(this.nucleus.body);
 
-    Object.assign(this, cellDefaults);
+    Object.assign(this, cellDefaults)
 
-    this.baseColor = [...this.genes[0].color, 100];
-    this.wallColor = [...this.genes[0].color, 25];
+    this.setBase(); // Set the baseGene name as well as actual colors to be painted.
+    // baseGene, baseColor, cytoColor, nuclColor
 
-
-    // this.composite = this.mjsi.Composite.create({ label: 'cell' });
-    // this.geneComposite = this.mjsi.Composite.create({ label: 'genes' });
-    // this.wallComposite = this.mjsi.Composite.create({ label: 'cellWall' });
-    // this.mjsi.Composite.add(this.composite, 
-    //   [...geneBodies, ...this.geneConstraints]);
-    // this.mjsi.Composite.add(this.wallComposite,
-    //   [...wall, ...this.wallConstraints]);
-    // this.mjsi.Composite.add(this.composite,
-    //   [this.body, this.geneComposite, this.wallComposite]);
+    // console.log(this.expressions)
   }
 
-  moveRandom(){
+
+  static
+    getNewGenes() {
+    let numSegments = randNumGenes(); // Get the number of gene segments to create.
+
+    let genes = { // Setup inital genes object
+      numSegments: numSegments,
+      segments: new Array(numSegments)
+    }
+
+    genes.segments[0] = {  // 'base' gene color/length
+      color: randBaseGeneColor(),
+      length: randGeneLength()
+    }
+    let gene = null, n = 1; // Getting the rest of the genes.
+    while (n < numSegments) {
+      gene = randGeneColor();
+      if (true || gene == genes.segments[0].color || !baseColors.has(gene)) {
+        genes.segments[n] = { color: gene, length: randGeneLength() };
+        n += 1;
+      }
+    }
+
+    genes['totalGenesLength'] = genes.segments  // Get total genes length;
+      .reduce((total, gene) => total + gene.length, 0)
+
+    genes['avgGeneArea'] = Math.sqrt(genes.segments // Get avg gene area.
+      .reduce((total, gene) => total + gene.length * gene.length, 0))
+
+    return genes;
+  }
+
+  getNewNucleus(x, y) {
+    let avgGeneArea = this.genes.avgGeneArea
+    let bodyRadius = avgGeneArea * 2 < minBodySize ? minBodySize : avgGeneArea;
+
+    bodyRadius = cellScale * bodyRadius;
+    this.nucleus = {
+      body: this.mjsi.addCircle(
+        { x: x, y: y, r: bodyRadius, options: cellBodyDefaults }
+      ), 
+      r: bodyRadius
+    }
+    // bodyRadius = cellScale * bodyRadius; // Set scale of object.
+    // let body = 
+    // return [bodyRadius, body];
+  }
+
+  getNewExpressions() {
+    this.expressions = {};
+    for (let i = 0; i < this.genes.numSegments; i++) {
+      let { color, length } = this.genes.segments[i];
+      if (color in this.expressions) {
+        this.expressions[color].length += length;
+        this.expressions[color].count += 1;
+        this.expressions[color].setAvgLength();
+      }
+      else {
+        this.expressions[color] = getExpression(color, [length, this.nucleus.body]);
+      }
+    }
+
+    let maxConstraintDist = 0;
+    for (const [_, exp] of Object.entries(this.expressions)) {
+
+      let constraintDist = (this.nucleus.r + cellScale * exp.avgLength) // Distance between nucleus and gene expression.
+        * (1 + cellScale * Math.random() / 3);
+      
+      if (constraintDist + exp.avgLength > maxConstraintDist) {
+        maxConstraintDist = constraintDist + exp.avgLength;
+      }
+
+      let expBody = this.mjsi.addCircle({
+        x: this.pos.x 
+          + cellScale * (minBodySize * Math.random() - minBodySize / 2),
+        y: this.pos.y
+          + cellScale * (minBodySize * Math.random() - minBodySize / 2),
+        r: cellScale * exp.avgLength,
+        options: { mass: 0 }
+      })
+      
+      let constraintOptions = {
+        bodyA: this.nucleus.body,
+        bodyB: expBody,
+        length: constraintDist,
+        stiffness: 0
+      }
+
+      let expConstraint = this.mjsi.addConstraint(constraintOptions);
+
+      exp.body = expBody;
+      exp.constraint = expConstraint;
+    }
+
+    if (this.wall) this.wall['r'] = maxConstraintDist;
+    else (this.wall = {r: maxConstraintDist});
+    
+  }
+
+  getNewWall() {
+    let thickness = 10;
+    let offset = thickness / 2;
+    let [segments, constraints] = this.mjsi.addSoftCircle(
+      { x: this.pos.x, y: this.pos.y, r: this.wall.r + offset, thickness: thickness,
+        nSegs: 8, options: { mass: 1 } }
+    )
+    this.wall['segments'] = segments;
+    this.wall['constraints'] = constraints;
+  }
+
+  setBase() {
+    this.baseGene = this.genes.segments[0].color;
+    this.baseColor = this.expressions[this.baseGene].color;
+    this.cytoColor = [...this.baseColor, 25];
+    this.nuclColor = [...this.baseColor, 10];
+  }
+
+
+  moveRandom() {
     let vx = this.maxCellVel * Math.random() - this.maxCellVel / 2;
     let vy = this.maxCellVel * Math.random() - this.maxCellVel / 2;
-    this.applyForce({x: vx, y: vy})
+    this.applyForce({ x: vx, y: vy })
   }
 
+  update() {
+    if ("cyan" in this.expressions) {
+      this.expressions["cyan"].activate();
+    }
+
+  }
+
+
   disp(p) {
-    p.fill(this.wallColor)
-    p.stroke(this.genes[0].color)
+    p.fill(this.cytoColor)
+    p.stroke(this.baseColor)
     p.beginShape();
-    for (let seg of this.wall) {
-      p.curveVertex(seg.position.x, seg.position.y)
+    for (let seg of this.wall.segments) {
+      p.vertex(seg.position.x, seg.position.y)
     }
     p.endShape(p.CLOSE);
-  
+
     p.stroke('black')
     p.fill(this.baseColor)
-    p.circle(this.body.position.x, this.body.position.y, this.r * 2)
+    p.circle(this.pos.x, this.pos.y, this.diameter)
 
-    for (let gene of this.genes) gene.disp(p);
+    for (let exp in this.expressions) {
+      this.expressions[exp].disp(p)
+    }
 
   }
 
   removeWall() {
-    this.mjsi.removeBody(this.wall)
-    this.mjsi.removeBody(this.wallConstraints)
-    this.wall = [];
-    this.wallConstraints = [];
+    this.mjsi.removeBody(this.wall.segments)
+    this.mjsi.removeBody(this.wall.constraints)
+
   }
 
-  removeGenes() {
-    this.mjsi.removeBody(this.geneBodies);
-    this.mjsi.removeBody(this.geneConstraints);
-    this.genes = [];
-    this.geneBodies = [];
-    this.geneConstraints = [];
+  removeExpressions() {
+    for (let gene in this.expressions) {
+      let exp = this.expressions[gene];
+      this.mjsi.removeBody(exp.body, exp.constraint)
+    }
   }
 
   removeBody() {
-    this.mjsi.removeBody(this.body);
-    this.body = []; 
+    this.mjsi.removeBody(this.nucleus.body);
   }
 
-  collectGenes(x, y) {
-    let genes = [], geneBodies = [];
-    let gene;
-    genes[0] = randBaseGeneColor();
-    while (genes.length < this.numGenes) {
-      gene = randGeneColor();
-      if (gene == genes[0] || !baseColors.has(gene)) genes.push(gene);
-    }
-    for (let i = 0; i < genes.length; i++) {
-      genes[i] = getGene(genes[i]);
-      genes[i].body = this.mjsi.addCircle({
-        x: x + cellScale * (minBodySize*Math.random() - minBodySize/2),
-        y: y + cellScale * (minBodySize*Math.random() - minBodySize/2),
-        r: cellScale * genes[i].length,
-        options: {mass: 0}
-      })
-      geneBodies.push(genes[i].body);
-    }
-    this.totalExpressionLength = Object.values(genes)
-      .reduce((t, gene) => t + gene.length, 0)
-
-    return {genes, geneBodies};
-  }
-
-  constrainGenesToBody() {
-    let geneConstraints = [];
-    let wallR = 0, len = 0;
-    for (let gene of this.genes) {
-      len = (this.r + cellScale*gene.length) * (1 + cellScale * Math.random() / 2);
-      wallR = (len + gene.length > wallR) ? (len + gene.length) : wallR;
-      let options = {
-        bodyA: this.body,
-        bodyB: gene.body,
-        length: len,
-        stiffness: 0
-      }
-      let constraint = this.mjsi.Constraint.create(options)
-
-      geneConstraints.push(constraint);
-      this.mjsi.World.add(this.mjsi.world, constraint)
-    }
-    return {geneConstraints, wallR};
-  }
-
-  bodySize() {
-    let geneArea = Object.values(this.genes)
-      .reduce((t, gene) => t + gene.length * gene.length, 0)
-
-    let gA = Math.sqrt(geneArea)
-    return gA*2 < minBodySize ? minBodySize : gA
-  }
 
 
 }

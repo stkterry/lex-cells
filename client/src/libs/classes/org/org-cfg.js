@@ -7,7 +7,7 @@ export const baseRepCost = 40;
 export const geneRepCost = 3;
 
 export const minBodySize = 10;
-export const cellScale = 1;
+export const cellScale = 0.5;
 export const cellBodyDefaults = {
   mass: 10,
   frictionAir: 0.01,
