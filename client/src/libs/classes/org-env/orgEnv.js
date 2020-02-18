@@ -12,7 +12,10 @@ class OrgEnv {
 
     this.mjsi.world.gravity.y = 0;
     this.mjsi.setWorldBounds(w, h, boundsThickness);
-    this.organisms = [];
+    this.organisms = {};
+    this.orgsArray = [];
+
+    // this.setupEvents();
   }
 
   addNOrgs(n) {
@@ -20,18 +23,13 @@ class OrgEnv {
     while (orgs.length < n) {
       let org = new Org(...this.randXY(), this.mjsi);
       if (OrgEnv.overlaps(org, orgs)) {
-        this.kill(org);
+        Org.die(org, org.composite);
       } else {
         orgs.push(org);
+        this.organisms[org.id] = org;
       }
     }
-    this.organisms.push(...orgs);
-  }
-
-  kill(org) {
-    org.removeWall();
-    org.removeExpressions();
-    org.removeBody();
+    this.orgsArray.push(...orgs);
   }
 
   static
@@ -46,18 +44,28 @@ class OrgEnv {
   }
 
   updateEnv() {
-    for (let i = 0; i < this.organisms.length; i++) {
-      this.organisms[i].update();
-      // console.log(this.organisms[i])
+    // for (let i = 0; i < this.orgsArray.length; i++) {
+    //   this.orgsArray[i].updatePassive();
+    // }
+    for (let id in this.organisms) {
+      this.organisms[id].updatePassive();
     }
   }
 
-  moveOrgs() {
-    for (let org of this.organisms) org.moveRandom();
+  setupEvents() {
+    this.mjsi.Events.on(this.mjsi.engine, 'collisionStart', (event) => {
+      let pairs = event.pairs.filter(pair => {
+        return pair.bodyA.topParentId != pair.bodyB.topParentId
+          && pair.bodyA.topParentId && pair.bodyB.topParentId
+      })
+      for (let pair of pairs) {
+        // console.log(pair) 
+      }
+    })
   }
 
   dispOrgs() {
-    for (let org of this.organisms) org.disp(this.p);
+    for (let id in this.organisms) this.organisms[id].disp(this.p);
   }
 
   randXY() {

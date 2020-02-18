@@ -7,6 +7,7 @@ const Constraint = mjs.Constraint;
 const Engine = mjs.Engine;
 const Composite = mjs.Composite;
 const Runner = mjs.Runner;
+const Events = mjs.Events;
 
 const TAU = Math.PI * 2;
 const PI = Math.PI;
@@ -23,6 +24,11 @@ export class MJSWrapper {
     this.Engine = mjs.Engine;
     this.Composite = mjs.Composite;
     this.Runner = mjs.Runner;
+    this.Events = mjs.Events;
+  }
+
+  upTime() {
+    return this.engine.timing.timestamp;
   }
 
   nextTick(delta) {
@@ -71,7 +77,11 @@ export class MJSWrapper {
   addCircle({ x = 0, y = 0, r = 10, composite = null, options = {} } = {}) {
     let body = Bodies.circle(x, y, r, options);
 
-    if (composite) Composite.add(composite, body);
+    if (composite) {
+      // this.addBody(body);
+      Composite.add(composite, body);
+      body.topParentId = composite.id;
+    }
     else this.addBody(body);
 
     return body;
@@ -122,6 +132,8 @@ export class MJSWrapper {
       let rect = Bodies.rectangle(sx, sy, w, h, 
         { angle: angle - PI / 2, collisionFilter: { group: -1 } })
       segments.push(rect);
+      
+      rect.topParentId = composite.id;
     }
 
     segments.push(segments[0]);
@@ -142,20 +154,24 @@ export class MJSWrapper {
         bodyB: segments[i + 1],
         pointA: pointA,
         pointB: pointB,
-        length: 0,
-        stiffness: 1,
+        length: 1,
+        stiffness: 0.1,
         damping: 0.1
       }
       let constraint = Constraint.create(optsEdge);
       constraints.push(constraint);
     }
+    
     segments.pop();
-
     if (composite) {
+    
       let wallComposite = Composite.create({ label: 'wall' });
       Composite.add(wallComposite, segments);
       Composite.add(wallComposite, constraints);
+      // World.add(this.world, wallComposite)
       Composite.add(composite, wallComposite);
+
+
     } else {
       for (let segment in segments) World.add(this.world, segment);
       for (let constraint in constraints) World.add(this.world, constraint);

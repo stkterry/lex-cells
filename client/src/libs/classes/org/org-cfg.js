@@ -9,11 +9,19 @@ export const geneRepCost = 3;
 export const minBodySize = 10;
 export const cellScale = 0.5;
 export const cellBodyDefaults = {
-  mass: 10,
-  frictionAir: 0.01,
+  mass: 10
 }
+export const GeneDefaults = {
+  maxVel: 0.01,
+  greenMult: 1/500,
+  redMult: 1/2,
+}
+
 export const cellDefaults = {
-  maxCellVel: 0.01
+  lifespan: 30,
+  age: 0,
+  energy: 50,
+  upKeepMult: 1/5000,
 }
 
 export const baseColors = new Set(
@@ -23,6 +31,14 @@ export const geneColors = new Set(
   ['red', 'gray', 'green', 'black',
    'yellow', 'blue', 'white', 'cyan']
 )
+
+export const activeColors = new Set([
+  'red', 'blue', 'white', 'gray', 'black'
+])
+
+export const passiveColors = new Set([
+  'green', 'cyan', 'yellow'
+])
 
 export const randGeneColor = () => {
   let pick = 20 * Math.random();

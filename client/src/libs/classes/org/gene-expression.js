@@ -1,7 +1,7 @@
 // Gene types, red, green, black, gray, yellow, blue, cyan, white 
-import { cellScale, cellDefaults } from "./org-cfg";
+import { cellScale, GeneDefaults } from "./org-cfg";
 
-const maxCellVel = cellDefaults['maxCellVel'];
+const maxVel = GeneDefaults['maxVel'];
 
 import { MJSWrapper } from "../matterHelpers";
 
@@ -90,7 +90,7 @@ export class CyanExpression extends BaseExpression {
     this.ef = 0;
 
     // Movement!
-    this.lim = maxCellVel * (this.length / (1 + this.length));
+    this.lim = maxVel * (this.length / (1 + this.length));
     this.applyForce = MJSWrapper.getApplyForceToCenter(body);
   }
 
