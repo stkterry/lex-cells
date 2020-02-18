@@ -1,14 +1,17 @@
 import { MJSWrapper } from "../matterHelpers";
 
+import shortid from "shortid";
 import Org from "../org/org";
 import { boundsThickness } from "./orgEnv-config";
+shortid.seed(666);
 
 class OrgEnv {
   constructor(p, w, h) {
     this.p = p;
-    this.mjsi = new MJSWrapper();
     this.w = w;
     this.h = h;
+    this.mjsi = new MJSWrapper();
+    this.idGen = shortid.generate;
 
     this.mjsi.world.gravity.y = 0;
     this.mjsi.setWorldBounds(w, h, boundsThickness);
@@ -21,12 +24,13 @@ class OrgEnv {
   addNOrgs(n) {
     let orgs = [];
     while (orgs.length < n) {
-      let org = new Org(...this.randXY(), this.mjsi);
+      let uniqueId = this.idGen();
+      let org = new Org(...this.randXY(), this.mjsi, uniqueId);
       if (OrgEnv.overlaps(org, orgs)) {
-        Org.die(org, org.composite);
+        Org.die(org);
       } else {
         orgs.push(org);
-        this.organisms[org.id] = org;
+        this.organisms[uniqueId] = org;
       }
     }
     this.orgsArray.push(...orgs);
@@ -37,7 +41,7 @@ class OrgEnv {
     for (let aOrg of orgs) {
       let dx = aOrg.pos.x - bOrg.pos.x;
       let dy = aOrg.pos.y - bOrg.pos.y;
-      let t = aOrg.wall.r + bOrg.wall.r;
+      let t = aOrg.matter.wall.r + bOrg.matter.wall.r;
       if (t*t > dx*dx + dy*dy) return true;
     }
     return false;

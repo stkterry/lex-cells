@@ -6,30 +6,25 @@ import {
 import { getExpression } from "./gene-expression";
 
 class Org {
-  constructor(x = 0, y = 0, mjsi) {
+  constructor(x = 0, y = 0, mjsi, uniqueId) {
     this.mjsi = mjsi;
-    this.composite = this.mjsi.createComposite({'label': 'cell'})
-    this.id = this.composite.id;
-
-
+    this.matter = {nucleus: null, expressions: null, wall: null}
+    this.id = uniqueId;
 
     this.getNewGenes();
 
-    this.getNewNucleus(x, y);
-    this.pos = this.nucleus.body.position;
-    this.diameter = this.nucleus.r * 2;
+    this.matter.nucleus = this.getNewNucleus(x, y)
+    this.matter.expressions = this.getNewExpressions()
+    this.matter.wall = this.getNewWall();
 
-    this.getNewExpressions()
-
-    this.getNewWall();
+    this.pos = this.matter.nucleus.body.position;
+    this.diameter = this.matter.nucleus.r * 2;
 
     this.applyForce = this.mjsi.constructor
-      .getApplyForceToCenter(this.nucleus.body);
+      .getApplyForceToCenter(this.matter.nucleus.body);
 
     this.setBase(); // Set the baseGene name as well as actual colors to be painted.
     // baseGene, baseColor, cytoColor, nuclColor
-
-    console.log(this.composite.bodies)
   }
 
   getNewGenes() {
@@ -65,86 +60,77 @@ class Org {
   getNewNucleus(x, y) {
     let avgGeneArea = this.genes.avgGeneArea
     let bodyRadius = avgGeneArea * 2 < minBodySize ? minBodySize : avgGeneArea;
-
     bodyRadius = cellScale * bodyRadius;
-    this.nucleus = {
+
+    return {
       body: this.mjsi.addCircle(
         { x: x, y: y, r: bodyRadius, 
-          options: {...cellBodyDefaults, label: 'nucleus' },
-          composite: this.composite }
+          options: {...cellBodyDefaults, label: 'nucleus' }
+        }
       ), 
       r: bodyRadius
     }
   }
 
   getNewExpressions() {
-    this.expressions = {};
+    let expressions = {};
     for (let i = 0; i < this.genes.numSegments; i++) {
       let { color, length } = this.genes.segments[i];
-      if (color in this.expressions) {
-        this.expressions[color].length += length;
-        this.expressions[color].count += 1;
-        this.expressions[color].setAvgLength();
+      if (color in expressions) {
+        expressions[color].length += length;
+        expressions[color].count += 1;
+        expressions[color].setAvgLength();
       }
       else {
-        this.expressions[color] = getExpression(color, [length, this.nucleus.body]);
+        expressions[color] = getExpression(color, [length, this.matter.nucleus.body]);
       }
     }
 
-    let maxConstraintDist = 0, k = 0, maxK = Object.keys(this.expressions).length;
-    for (const [color, exp] of Object.entries(this.expressions)) {
-
-      let constraintDist = (this.nucleus.r + cellScale * exp.avgLength) // Distance between nucleus and gene expression.
-        * (1 + cellScale * Math.random() / 3);
-      
-      if (constraintDist + exp.avgLength > maxConstraintDist) {
-        maxConstraintDist = constraintDist + exp.avgLength;
-      }
-
-      let spawnRadius = this.nucleus.r + cellScale * exp.avgLength + 3;
-      let spawnAng = 2 * Math.PI * k/maxK;
-      k += 1;
+    for (const [color, exp] of Object.entries(expressions)) {
       let expBody = this.mjsi.addCircle({
-        x: this.pos.x 
-          + spawnRadius * Math.cos(spawnAng),
-        y: this.pos.y
-          + spawnRadius * Math.sin(spawnAng),
+        x: this.matter.nucleus.body.position.x,
+        y: this.matter.nucleus.body.position.y,
         r: cellScale * exp.avgLength,
-        options: { label: 'expression-' + color },
-        composite: this.composite
+        options: { mass: 0, label: 'expression-' + color }
       })
-
       exp.body = expBody;
     }
-
-    if (this.wall) this.wall['r'] = maxConstraintDist;
-    else (this.wall = {r: maxConstraintDist});
-    
+        
+    return expressions;
   }
 
   getNewWall() {
     let thickness = 10;
     let offset = 5;
-    let [segments, constraints] = this.mjsi.addSoftCircle(
-      { x: this.pos.x, y: this.pos.y, r: this.wall.r + offset, 
-        thickness: thickness, nSegs: 8, 
-        composite: this.composite, options: { mass: 1 } }
-    )
+    let r = Math.max(...Object.values(this.matter.expressions)
+      .map(exp => exp.avgLength)) + this.matter.nucleus.r + offset + 5;
 
-    this.wall['segments'] = segments;
-    this.wall['constraints'] = constraints;
+    let [segments, constraints] = this.mjsi.addSoftCircle(
+      { x: this.matter.nucleus.body.position.x, 
+        y: this.matter.nucleus.body.position.y, 
+        r: r, 
+        thickness: thickness, nSegs: 8, 
+        options: { mass: 1 } }
+    )
+    let wall = {
+      segments: segments,
+      constraints: constraints,
+      r: r
+    }
+
+    return wall;
   }
 
   setBase() {
     this.baseGene = this.genes.segments[0].color;
-    this.baseColor = this.expressions[this.baseGene].color;
+    this.baseColor = this.matter.expressions[this.baseGene].color;
     this.cytoColor = [...this.baseColor, 25];
     this.nuclColor = [...this.baseColor, 10];
   }
 
   updatePassive() {
-    if ("cyan" in this.expressions) {
-      this.expressions["cyan"].activate();
+    if ("cyan" in this.matter.expressions) {
+      this.matter.expressions["cyan"].activate();
     } 
   }
 
@@ -158,7 +144,7 @@ class Org {
     p.fill(this.cytoColor)
     p.stroke(this.baseColor)
     p.beginShape();
-    for (let seg of this.wall.segments) {
+    for (let seg of this.matter.wall.segments) {
       p.vertex(seg.position.x, seg.position.y)
     }
     p.endShape(p.CLOSE);
@@ -167,35 +153,20 @@ class Org {
     p.fill(this.baseColor)
     p.circle(this.pos.x, this.pos.y, this.diameter)
 
-    for (let exp in this.expressions) {
-      this.expressions[exp].disp(p)
+    for (let exp in this.matter.expressions) {
+      this.matter.expressions[exp].disp(p)
     }
 
   }
+
+
 
   static
-  die(org, composite) {
-    org.removeBody(composite.bodies);
-    org.removeBody(composite.constraints)
-    for (let comp in composite.composites) Org.die(org, comp);
-    org.removeBody(composite);
-  }
-
-  removeWall() {
-    this.mjsi.removeBody(this.wall.segments)
-    this.mjsi.removeBody(this.wall.constraints)
-
-  }
-
-  removeExpressions() {
-    for (let gene in this.expressions) {
-      let exp = this.expressions[gene];
-      this.mjsi.removeBody(exp.body, exp.constraint)
-    }
-  }
-
-  removeBody() {
-    this.mjsi.removeBody(this.nucleus.body);
+  die(org) {
+    org.mjsi.removeBody(org.matter.nucleus.body);
+    org.mjsi.removeBody(Object.values(org.matter.expressions).map(exp => exp.body));
+    org.mjsi.removeBody(org.matter.wall.constraints);
+    org.mjsi.removeBody(org.matter.wall.segments);
   }
 }
 

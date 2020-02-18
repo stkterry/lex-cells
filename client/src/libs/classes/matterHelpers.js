@@ -74,15 +74,11 @@ export class MJSWrapper {
   }
 
 
-  addCircle({ x = 0, y = 0, r = 10, composite = null, options = {} } = {}) {
+  addCircle({ x = 0, y = 0, r = 10, parentId = null, options = {} } = {}) {
     let body = Bodies.circle(x, y, r, options);
 
-    if (composite) {
-      // this.addBody(body);
-      Composite.add(composite, body);
-      body.topParentId = composite.id;
-    }
-    else this.addBody(body);
+    if (parentId) body.parentId = parentId;
+    this.addBody(body);
 
     return body;
   }
@@ -99,8 +95,6 @@ export class MJSWrapper {
       let angle = i * angDel;
       let sx = Rdiff * Math.cos(angle);
       let sy = Rdiff * Math.sin(angle);
-      // let rect = addRect({ x: sx, y: sy, w: w, h: h, 
-      //   options: { angle: angle - PI / 2} })
       let rect = Bodies.rectangle(sx, sy, w, h, {angle: angle - PI/2})
       segments.push(rect);
     }
@@ -114,7 +108,7 @@ export class MJSWrapper {
 
   addSoftCircle({ 
     x = 0, y = 0, r = 200, thickness = 20, 
-    nSegs = 16, composite = null, options = {} } = {}) {
+    nSegs = 16, parentId = null, options = {} } = {}) {
 
 
     let angDel = TAU / nSegs; // Angle each segment covers.
@@ -133,7 +127,8 @@ export class MJSWrapper {
         { angle: angle - PI / 2, collisionFilter: { group: -1 } })
       segments.push(rect);
       
-      rect.topParentId = composite.id;
+      World.add(this.world, rect)
+      if (parentId) rect.parentId = parentId;
     }
 
     segments.push(segments[0]);
@@ -154,28 +149,17 @@ export class MJSWrapper {
         bodyB: segments[i + 1],
         pointA: pointA,
         pointB: pointB,
-        length: 1,
+        length: 0,
         stiffness: 0.1,
         damping: 0.1
       }
       let constraint = Constraint.create(optsEdge);
       constraints.push(constraint);
+      World.add(this.world, constraint);
+      if (parentId) constraint.parentId = parentId;
     }
     
     segments.pop();
-    if (composite) {
-    
-      let wallComposite = Composite.create({ label: 'wall' });
-      Composite.add(wallComposite, segments);
-      Composite.add(wallComposite, constraints);
-      // World.add(this.world, wallComposite)
-      Composite.add(composite, wallComposite);
-
-
-    } else {
-      for (let segment in segments) World.add(this.world, segment);
-      for (let constraint in constraints) World.add(this.world, constraint);
-    }
 
     return [segments, constraints]
   } 

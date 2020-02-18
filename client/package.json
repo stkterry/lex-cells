@@ -36,6 +36,7 @@
     "react-p5-wrapper": "^2.0.0",
     "react-router": "^5.1.2",
     "react-router-dom": "^5.1.2",
+    "shortid": "^2.2.15",
     "simplex-noise": "^2.4.0"
   }
 }
