@@ -18,13 +18,13 @@ class OrgEnv {
     this.organisms = {};
     this.orgsArray = [];
 
-    // this.setupEvents();
+    this.setupEvents();
   }
 
   addNOrgs(n) {
     let orgs = [];
     while (orgs.length < n) {
-      let org = new Org(...this.randXY(), this.mjsi);
+      let org = new Org(...this.randXY(), this.mjsi, this.p);
       if (OrgEnv.overlaps(org, orgs)) {
         Org.kill(org);
       } else {
@@ -62,13 +62,28 @@ class OrgEnv {
           && pair.bodyA.topParentId && pair.bodyB.topParentId
       })
       for (let pair of pairs) {
-        // console.log(pair) 
+        let orgA = this.organisms[pair.bodyA.topParentId];
+        let orgB = this.organisms[pair.bodyB.topParentId];
+        Org.orgEvent(this.organisms, orgA, orgB);
       }
     })
+
+    // this.mjsi.Events.on(this.mjsi.engine, 'collisionEnd', (event) => {
+    //   let pairs = event.pairs.filter(pair => {
+    //     return pair.bodyA.topParentId != pair.bodyB.topParentId
+    //       && pair.bodyA.topParentId && pair.bodyB.topParentId
+    //   })
+    //   for (let pair of pairs) {
+    //     let orgA = this.organisms[pair.bodyA.topParentId];
+    //     let orgB = this.organisms[pair.bodyB.topParentId];
+    //     orgA.eventPaint = null;
+    //     orgB.eventPaint = null;
+    //   }
+    // })
   }
 
-  dispOrgs() {
-    for (let id in this.organisms) this.organisms[id].disp(this.p);
+  drawOrgs() {
+    for (let id in this.organisms) this.organisms[id].draw();
   }
 
   randXY() {

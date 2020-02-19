@@ -1,15 +1,18 @@
 
 import {
   randBaseGeneColor, randGeneColor, randNumGenes, minBodySize, cellScale,
-  baseColors, cellBodyDefaults, randGeneLength, passiveColors,
+  baseColors, cellBodyDefaults, randGeneLength, passiveColors, cellDefaults,
 } from "./org-cfg";
 import { getExpression } from "./gene-expression";
 
 class Org {
-  constructor(x = 0, y = 0, mjsi, uniqueId) {
+  constructor(x = 0, y = 0, mjsi, p) {
+    this.p = p;
     this.mjsi = mjsi;
     this.composite = this.mjsi.createComposite({ label: 'cell' });
     this.id = this.composite.id;
+
+    Object.assign(this, cellDefaults)
 
     this.getNewGenes();
 
@@ -20,11 +23,9 @@ class Org {
     this.pos = this.nucleus.body.position;
     this.diameter = this.nucleus.r * 2;
 
-    this.applyForce = this.mjsi.constructor
-      .getApplyForceToCenter(this.nucleus.body);
-
     this.setBase(); // Set the baseGene name as well as actual colors to be painted.
     // baseGene, baseColor, cytoColor, nuclColor
+    this.eventPaint = null; // After an orgEvent will be filled with colors for the next draw event.
   }
 
   getNewGenes() {
@@ -83,7 +84,8 @@ class Org {
         expressions[color].setAvgLength();
       }
       else {
-        expressions[color] = getExpression(color, [length, this.nucleus.body]);
+        // let that = this;
+        expressions[color] = getExpression(color, [length, this]);
       }
     }
 
@@ -95,7 +97,7 @@ class Org {
         composite: this.composite,
         options: { mass: 0, label: 'expression-' + color }
       })
-      exp.body = expBody;
+      exp.setBody(expBody);
     }
         
     return expressions;
@@ -128,37 +130,68 @@ class Org {
     this.baseGene = this.genes.segments[0].color;
     this.baseColor = this.expressions[this.baseGene].color;
     this.cytoColor = [...this.baseColor, 25];
-    this.nuclColor = [...this.baseColor, 10];
+    this.nuclColor = [...this.baseColor, 225];
   }
 
   updatePassive() {
     if ("cyan" in this.expressions) {
-      this.expressions["cyan"].activate();
+      this.expressions.cyan.activate();
     } 
   }
 
+  updateActive(otherOrg) {
+
+  }
+
+  static
+  orgEvent(organisms, orgA, orgB) {
+    if (orgA.expressions.hasOwnProperty('red')) {
+      orgA.expressions.red.activate(orgB);
+    }
+  }
+
   update() {
-    if (this.age > this.lifespan) this.die();
+    if (this.age > this.lifespan) {
+      this.die();
+      return true;
+    }
+
+    return false;
   }
 
 
 
-  disp(p) {
-    p.fill(this.cytoColor)
-    p.stroke(this.baseColor)
+  draw() {
+    if (this.eventPaint) {
+      var baseColor = this.eventPaint.baseColor;
+      var cytoColor = this.eventPaint.cytoColor;
+
+      this.eventPaint.timer -= 1;
+      if (this.eventPaint.timer < 0) this.eventPaint = null;
+    }
+    else {
+      var baseColor = this.baseColor;
+      var cytoColor = this.cytoColor;      
+    }
+
+
+    let p = this.p;
+    p.fill(cytoColor)
+    p.stroke(baseColor)
     p.beginShape();
     for (let seg of this.wall.segments) {
-      p.vertex(seg.position.x, seg.position.y)
+      p.curveVertex(seg.position.x, seg.position.y)
     }
     p.endShape(p.CLOSE);
 
     p.stroke('black')
-    p.fill(this.baseColor)
+    p.fill(baseColor)
     p.circle(this.pos.x, this.pos.y, this.diameter)
 
     for (let exp in this.expressions) {
-      this.expressions[exp].disp(p)
+      this.expressions[exp].draw(p)
     }
+
 
   }
 
@@ -167,9 +200,6 @@ class Org {
   static
   kill(org) {
     org.mjsi.removeBody(org.composite);
-    // org.mjsi.removeBody(Object.values(org.expressions).map(exp => exp.body));
-    // org.mjsi.removeBody(org.wall.constraints);
-    // org.mjsi.removeBody(org.wall.segments);
   }
 }
 

@@ -40,6 +40,18 @@ export const passiveColors = new Set([
   'green', 'cyan', 'yellow'
 ])
 
+export const colorCodes = {
+  base: [170, 0, 255], // purple
+  green: [98, 188, 77],
+  red: [255, 64, 64],
+  black: [30, 30, 30],
+  white: [200, 200, 200],
+  gray: [125, 125, 125],
+  yellow: [213, 150, 44],
+  cyan: [73, 172, 197],
+  blue: [8, 82, 165]
+}
+
 export const randGeneColor = () => {
   let pick = 20 * Math.random();
   if      (pick < 2) return 'white' // 10%

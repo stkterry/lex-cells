@@ -1,22 +1,29 @@
 // Gene types, red, green, black, gray, yellow, blue, cyan, white 
-import { cellScale, GeneDefaults } from "./org-cfg";
+import { cellScale, GeneDefaults, colorCodes } from "./org-cfg";
 
-const maxVel = GeneDefaults['maxVel'];
 
 import { MJSWrapper } from "../matterHelpers";
 
 class BaseExpression {
-  constructor(length) {
+  constructor(length, parentCell) {
+    this.parentCell = parentCell;
     this.body = null;
+    this.pos = null;
     this.constraint = null;
     this.length = length;
     this.count = 1;
     this.avgLength = length;
-    this.color = 'purple'
-    this.ef = 0;
+    this.color = colorCodes.purple;
 
+    Object.assign(this, GeneDefaults);
 
     this.diameter = cellScale * this.avgLength * 2;
+
+  }
+
+  setBody(body) {
+    this.body = body;
+    this.pos = body.position;
   }
 
   setAvgLength() {
@@ -24,74 +31,90 @@ class BaseExpression {
     this.diameter = cellScale * this.avgLength * 2;
   }
 
-  disp(p) {
+  draw(p) {
     p.fill(this.color);
-    p.circle(this.body.position.x, this.body.position.y, this.diameter)
+    p.circle(this.pos.x, this.pos.y, this.diameter)
   }
 
-  getEnergy() {
-    return this.length * this.eF;
-  }
 }
 
 
 export class GreenExpression extends BaseExpression {
-  constructor(length) {
-    super(length);
-    this.color = [98, 188, 77]; //#034d57
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.green; //#034d57
     this.ef = 0.5
   }
 }
 
 export class RedExpression extends BaseExpression {
-  constructor(length) {
-    super(length);
-    this.color = [255, 64, 64];
-    this.ef = 0.8
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.red;
+  }
+
+  activate(otherOrg) {
+    if (otherOrg.expressions.hasOwnProperty('blue')) {
+      if (otherOrg.eventPaint != null) otherOrg.eventPaint.timer += 2;
+      else {
+        let eventPaint = {
+          timer: 10,
+          baseColor: [...colorCodes.blue, 100],
+          cytoColor: [...colorCodes.blue, 100]
+        }
+        otherOrg.eventPaint = eventPaint;
+      } 
+      return;
+    } 
+
+    let energy = this.redMult * this.length;
+    if (otherOrg.energy < energy) energy = otherOrg.energy;
+    otherOrg.energy -= energy;
+
+    this.parentCell.energy += energy;
   }
 }
 
 export class BlackExpression extends BaseExpression {
-  constructor(length) {
-    super(length);
-    this.color = [30, 30, 30]
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.black;
     this.ef = 0.6
   }
 }
 
 export class WhiteExpression extends BaseExpression {
-  constructor(length) {
-    super(length);
-    this.color = [200, 200, 200]
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.white;
     this.ef = -0.5;
   }
 }
 
 export class GrayExpression extends BaseExpression {
-  constructor(length) {
-    super(length);
-    this.color = [125, 125, 125]
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.gray;
     this.ef = -1.0;
   }
 }
 
 export class YellowExpression extends BaseExpression {
-  constructor(length) {
-    super(length);
-    this.color = [213, 150, 44]
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.yellow;
     this.ef = 0;
   }
 }
 
 export class CyanExpression extends BaseExpression {
-  constructor(length, body) {
-    super(length);
-    this.color = [73, 172, 197]
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.cyan;
     this.ef = 0;
-
     // Movement!
-    this.lim = maxVel * (this.length / (1 + this.length));
-    this.applyForce = MJSWrapper.getApplyForceToCenter(body);
+    this.lim = this.maxVel * (this.length / (1 + this.length));
+    this.applyForce = MJSWrapper.getApplyForceToCenter(this.parentCell.nucleus.body);
   }
 
   activate() {
@@ -103,9 +126,9 @@ export class CyanExpression extends BaseExpression {
 }
 
 export class BlueExpression extends BaseExpression {
-  constructor(length) {
-    super(length);
-    this.color = [8, 82, 165];
+  constructor(...args) {
+    super(...args);
+    this.color = colorCodes.blue;
     this.ef = 0;
   }
 }

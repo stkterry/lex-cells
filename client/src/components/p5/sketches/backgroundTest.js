@@ -39,10 +39,10 @@ const testSketch = (p) => {
   p.draw = () => {
     p.background(0);
 
-    orgEnv.dispOrgs();
+    orgEnv.drawOrgs();
     if (start_stop_cond) {
-      orgEnv.mjsi.nextTick(p.frameRate() / 60)
       orgEnv.updateEnv();
+      orgEnv.mjsi.nextTick(p.frameRate() / 60)
     }
 
 
