@@ -8,20 +8,20 @@ import { getExpression } from "./gene-expression";
 class Org {
   constructor(x = 0, y = 0, mjsi, uniqueId) {
     this.mjsi = mjsi;
-    this.matter = {nucleus: null, expressions: null, wall: null}
-    this.id = uniqueId;
+    this.composite = this.mjsi.createComposite({ label: 'cell' });
+    this.id = this.composite.id;
 
     this.getNewGenes();
 
-    this.matter.nucleus = this.getNewNucleus(x, y)
-    this.matter.expressions = this.getNewExpressions()
-    this.matter.wall = this.getNewWall();
+    this.nucleus = this.getNewNucleus(x, y)
+    this.expressions = this.getNewExpressions()
+    this.wall = this.getNewWall();
 
-    this.pos = this.matter.nucleus.body.position;
-    this.diameter = this.matter.nucleus.r * 2;
+    this.pos = this.nucleus.body.position;
+    this.diameter = this.nucleus.r * 2;
 
     this.applyForce = this.mjsi.constructor
-      .getApplyForceToCenter(this.matter.nucleus.body);
+      .getApplyForceToCenter(this.nucleus.body);
 
     this.setBase(); // Set the baseGene name as well as actual colors to be painted.
     // baseGene, baseColor, cytoColor, nuclColor
@@ -64,7 +64,8 @@ class Org {
 
     return {
       body: this.mjsi.addCircle(
-        { x: x, y: y, r: bodyRadius, 
+        { x: x, y: y, r: bodyRadius,
+          composite: this.composite,
           options: {...cellBodyDefaults, label: 'nucleus' }
         }
       ), 
@@ -82,15 +83,16 @@ class Org {
         expressions[color].setAvgLength();
       }
       else {
-        expressions[color] = getExpression(color, [length, this.matter.nucleus.body]);
+        expressions[color] = getExpression(color, [length, this.nucleus.body]);
       }
     }
 
     for (const [color, exp] of Object.entries(expressions)) {
       let expBody = this.mjsi.addCircle({
-        x: this.matter.nucleus.body.position.x,
-        y: this.matter.nucleus.body.position.y,
+        x: this.nucleus.body.position.x,
+        y: this.nucleus.body.position.y,
         r: cellScale * exp.avgLength,
+        composite: this.composite,
         options: { mass: 0, label: 'expression-' + color }
       })
       exp.body = expBody;
@@ -102,13 +104,14 @@ class Org {
   getNewWall() {
     let thickness = 10;
     let offset = 5;
-    let r = Math.max(...Object.values(this.matter.expressions)
-      .map(exp => exp.avgLength)) + this.matter.nucleus.r + offset + 5;
+    let r = Math.max(...Object.values(this.expressions)
+      .map(exp => exp.avgLength)) + this.nucleus.r + offset + 5;
 
     let [segments, constraints] = this.mjsi.addSoftCircle(
-      { x: this.matter.nucleus.body.position.x, 
-        y: this.matter.nucleus.body.position.y, 
-        r: r, 
+      { x: this.nucleus.body.position.x, 
+        y: this.nucleus.body.position.y, 
+        r: r,
+        composite: this.composite,
         thickness: thickness, nSegs: 8, 
         options: { mass: 1 } }
     )
@@ -123,14 +126,14 @@ class Org {
 
   setBase() {
     this.baseGene = this.genes.segments[0].color;
-    this.baseColor = this.matter.expressions[this.baseGene].color;
+    this.baseColor = this.expressions[this.baseGene].color;
     this.cytoColor = [...this.baseColor, 25];
     this.nuclColor = [...this.baseColor, 10];
   }
 
   updatePassive() {
-    if ("cyan" in this.matter.expressions) {
-      this.matter.expressions["cyan"].activate();
+    if ("cyan" in this.expressions) {
+      this.expressions["cyan"].activate();
     } 
   }
 
@@ -144,7 +147,7 @@ class Org {
     p.fill(this.cytoColor)
     p.stroke(this.baseColor)
     p.beginShape();
-    for (let seg of this.matter.wall.segments) {
+    for (let seg of this.wall.segments) {
       p.vertex(seg.position.x, seg.position.y)
     }
     p.endShape(p.CLOSE);
@@ -153,8 +156,8 @@ class Org {
     p.fill(this.baseColor)
     p.circle(this.pos.x, this.pos.y, this.diameter)
 
-    for (let exp in this.matter.expressions) {
-      this.matter.expressions[exp].disp(p)
+    for (let exp in this.expressions) {
+      this.expressions[exp].disp(p)
     }
 
   }
@@ -162,11 +165,11 @@ class Org {
 
 
   static
-  die(org) {
-    org.mjsi.removeBody(org.matter.nucleus.body);
-    org.mjsi.removeBody(Object.values(org.matter.expressions).map(exp => exp.body));
-    org.mjsi.removeBody(org.matter.wall.constraints);
-    org.mjsi.removeBody(org.matter.wall.segments);
+  kill(org) {
+    org.mjsi.removeBody(org.composite);
+    // org.mjsi.removeBody(Object.values(org.expressions).map(exp => exp.body));
+    // org.mjsi.removeBody(org.wall.constraints);
+    // org.mjsi.removeBody(org.wall.segments);
   }
 }
 

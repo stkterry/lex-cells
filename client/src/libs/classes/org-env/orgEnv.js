@@ -24,13 +24,12 @@ class OrgEnv {
   addNOrgs(n) {
     let orgs = [];
     while (orgs.length < n) {
-      let uniqueId = this.idGen();
-      let org = new Org(...this.randXY(), this.mjsi, uniqueId);
+      let org = new Org(...this.randXY(), this.mjsi);
       if (OrgEnv.overlaps(org, orgs)) {
-        Org.die(org);
+        Org.kill(org);
       } else {
         orgs.push(org);
-        this.organisms[uniqueId] = org;
+        this.organisms[org.id] = org;
       }
     }
     this.orgsArray.push(...orgs);
@@ -41,19 +40,19 @@ class OrgEnv {
     for (let aOrg of orgs) {
       let dx = aOrg.pos.x - bOrg.pos.x;
       let dy = aOrg.pos.y - bOrg.pos.y;
-      let t = aOrg.matter.wall.r + bOrg.matter.wall.r;
+      let t = aOrg.wall.r + bOrg.wall.r;
       if (t*t > dx*dx + dy*dy) return true;
     }
     return false;
   }
 
   updateEnv() {
-    // for (let i = 0; i < this.orgsArray.length; i++) {
-    //   this.orgsArray[i].updatePassive();
-    // }
-    for (let id in this.organisms) {
-      this.organisms[id].updatePassive();
+    for (let i = 0; i < this.orgsArray.length; i++) {
+      this.orgsArray[i].updatePassive();
     }
+    // for (let id in this.organisms) {
+    //   this.organisms[id].updatePassive();
+    // }
   }
 
   setupEvents() {
