@@ -1,9 +1,13 @@
-import { MJSWrapper } from "../matterHelpers";
-
 import shortid from "shortid";
-import Org from "../org/org";
+
+import { MJSWrapper } from "../matterHelpers";
 import { boundsThickness } from "./orgEnv-config";
+import xorshiro128 from "../../PRNG/xoshiro128";
+import Org from "../org/org";
+
+const prng = xorshiro128('orgEnv');
 shortid.seed(666);
+
 
 class OrgEnv {
   constructor(p, w, h) {
@@ -18,18 +22,19 @@ class OrgEnv {
     this.organisms = {};
     this.orgsArray = [];
 
-    this.setupEvents();
+    // this.setupEvents();
   }
 
   addNOrgs(n) {
     let orgs = [];
     while (orgs.length < n) {
-      let org = new Org(...this.randXY(), this.mjsi, this.p);
+      let uniqId = this.idGen();
+      let org = new Org(...this.randXY(), this.mjsi, this.p, uniqId);
       if (OrgEnv.overlaps(org, orgs)) {
         Org.kill(org);
       } else {
         orgs.push(org);
-        this.organisms[org.id] = org;
+        // this.organisms[org.id] = org;
       }
     }
     this.orgsArray.push(...orgs);
@@ -58,41 +63,89 @@ class OrgEnv {
   setupEvents() {
     this.mjsi.Events.on(this.mjsi.engine, 'collisionStart', (event) => {
       let pairs = event.pairs.filter(pair => {
-        return pair.bodyA.topParentId != pair.bodyB.topParentId
-          && pair.bodyA.topParentId && pair.bodyB.topParentId
+        return pair.bodyA.owner != pair.bodyB.owner
+          && pair.bodyA.owner && pair.bodyB.owner
       })
       for (let pair of pairs) {
-        let orgA = this.organisms[pair.bodyA.topParentId];
-        let orgB = this.organisms[pair.bodyB.topParentId];
-        Org.orgEvent(this.organisms, orgA, orgB);
+        Org.orgEvent(this.organisms, 
+          pair.bodyA.owner, pair.bodyB.owner);
       }
     })
+  }
 
-    // this.mjsi.Events.on(this.mjsi.engine, 'collisionEnd', (event) => {
-    //   let pairs = event.pairs.filter(pair => {
-    //     return pair.bodyA.topParentId != pair.bodyB.topParentId
-    //       && pair.bodyA.topParentId && pair.bodyB.topParentId
-    //   })
-    //   for (let pair of pairs) {
-    //     let orgA = this.organisms[pair.bodyA.topParentId];
-    //     let orgB = this.organisms[pair.bodyB.topParentId];
-    //     orgA.eventPaint = null;
-    //     orgB.eventPaint = null;
-    //   }
-    // })
+  // setupEvents() {
+  //   this.mjsi.Events.on(this.mjsi.engine, 'collisionStart', (event) => {
+  //     let pairs = this.uniqPairs(event.pairs)
+
+  //     for (let pair of pairs) {
+  //       Org.orgEvent(this.organisms, pair.orgA, pair.orgB);
+  //     }
+  //   })
+  // }
+
+  uniqPairs(pairs) {
+    let seen = new Set();
+    let out = new Array(pairs.length);
+    let len = pairs.length;
+    let j = 0;
+
+
+    for (let i = 0; i < len; i++) {
+      let orgA = pairs[i].bodyA.owner;
+      let orgB = pairs[i].bodyB.owner;
+
+      if (!orgA || !orgB) continue;
+      if (orgA == orgB) continue;
+
+      let idF = (orgA.id).toString() + (orgB.id).toString();
+      let idB = (orgB.id).toString() + (orgA.id).toString();
+
+      if (!seen.has(idF) && !seen.has(idB)) {
+        let pair = { orgA: orgA, orgB: orgB };
+        seen.add(idF)
+        out[j] = pair;
+        j += 1;
+      }
+    }
+    return out.slice(0, j);
   }
 
   drawOrgs() {
-    for (let id in this.organisms) this.organisms[id].draw();
+    for (let org of this.orgsArray) org.draw();
   }
 
   randXY() {
     let limit = 50;
-    let x = limit + (this.w - limit*2) * Math.random();
-    let y = limit + (this.h - limit*2) * Math.random();
+    let x = limit + (this.w - limit*2) * prng();
+    let y = limit + (this.h - limit*2) * prng();
     return [x, y]
   }
 
 }
+
+
+// function uniqPairs(pairs) {
+//   let seen = new Set();
+//   let out = new Array(pairs.length);
+//   let len = pairs.length;
+//   let j = 0;
+
+//   for (let i = 0; i < len; i++) {
+//     let orgA = pairs[i].bodyA.owner;
+//     let orgB = pairs[i].bodyB.owner;
+
+
+//     // var idF = (orgA.id).toString() + (orgB.id).toString();
+//     // var idB = (orgB.id).toString() + (orgA.id).toString();
+
+//     // if (!seen.has(idF) && !seen.has(idB)) {
+//     //   var pair = { orgA: orgA, orgB: orgB };
+//     //   seen.add(idF)
+//     //   out[j] = pair;
+//     //   j += 1;
+//     // }
+//   }
+//   // return out.slice(0, j);
+// }
 
 export default OrgEnv;

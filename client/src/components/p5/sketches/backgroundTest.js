@@ -33,17 +33,17 @@ const testSketch = (p) => {
     orgEnv = new OrgEnv(p, CS.w, CS.h);
     orgEnv.addNOrgs(50);
 
-    // orgEnv.mjsi.run();
+    orgEnv.mjsi.run();
   }
 
   p.draw = () => {
     p.background(0);
 
     orgEnv.drawOrgs();
-    if (start_stop_cond) {
-      orgEnv.updateEnv();
-      orgEnv.mjsi.nextTick(p.frameRate() / 60)
-    }
+    orgEnv.updateEnv();
+    // if (start_stop_cond) {
+    //   orgEnv.mjsi.nextTick(p.frameRate() / 60)
+    // }
 
 
     fpsP.html(p.getFrameRate().toFixed(2));

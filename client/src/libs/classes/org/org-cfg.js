@@ -1,3 +1,6 @@
+import xorshiro128 from "../../PRNG/xoshiro128";
+const prng = xorshiro128('org-cfg');
+
 
 export const minGeneSegments = 4; // min gene segments
 export const maxGeneSegments = 16; // max gene segments
@@ -22,6 +25,11 @@ export const cellDefaults = {
   age: 0,
   energy: 50,
   upKeepMult: 1/5000,
+}
+
+export const eventStateDefaults = {
+  vul: true, energy: 0, kill: false,
+  flags:[]
 }
 
 export const baseColors = new Set(
@@ -53,7 +61,7 @@ export const colorCodes = {
 }
 
 export const randGeneColor = () => {
-  let pick = 20 * Math.random();
+  let pick = 20 * prng();
   if      (pick < 2) return 'white' // 10%
   else if (pick < 4) return 'blue'  // 10%
   else if (pick < 6) return 'yellow'  // 10%
@@ -65,7 +73,7 @@ export const randGeneColor = () => {
 }
 
 export const randBaseGeneColor = () => {
-  let pick = 10 * Math.random();
+  let pick = 10 * prng();
   if      (pick < 2) return 'red' // 20%
   else if (pick < 4) return 'gray' // 20%
   else if (pick < 6) return 'black' // 20%
@@ -74,11 +82,11 @@ export const randBaseGeneColor = () => {
 
 export const randGeneLength = () => {
   let diff = maxGeneLength - minGeneLength;
-  return diff * Math.random() + minGeneLength;
+  return diff * prng() + minGeneLength;
 }
 
 export const randNumGenes = () => {
   let diff = maxGeneSegments - minGeneSegments;
-  let numGenes = diff * Math.random() + minGeneSegments;
+  let numGenes = diff * prng() + minGeneSegments;
   return Math.floor(numGenes);
 }

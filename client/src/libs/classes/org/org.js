@@ -1,16 +1,17 @@
-
 import {
   randBaseGeneColor, randGeneColor, randNumGenes, minBodySize, cellScale,
   baseColors, cellBodyDefaults, randGeneLength, passiveColors, cellDefaults,
+  eventStateDefaults,
 } from "./org-cfg";
-import { getExpression } from "./gene-expression";
+
+import newExpression from "./gene-func";
 
 class Org {
-  constructor(x = 0, y = 0, mjsi, p) {
+  constructor(x = 0, y = 0, mjsi, p, uniqId) {
     this.p = p;
     this.mjsi = mjsi;
     this.composite = this.mjsi.createComposite({ label: 'cell' });
-    this.id = this.composite.id;
+    this.id = uniqId;
 
     Object.assign(this, cellDefaults)
 
@@ -26,6 +27,23 @@ class Org {
     this.setBase(); // Set the baseGene name as well as actual colors to be painted.
     // baseGene, baseColor, cytoColor, nuclColor
     this.eventPaint = null; // After an orgEvent will be filled with colors for the next draw event.
+    
+    this.defaultState = this.getNewDefaultState();
+    this.eventState = null;
+  }
+
+
+  getNewDefaultState() {
+    let passive = {};
+    let active = {};
+    for (let exp of Object.values(this.expressions)) {
+      passive = Object.assign({}, passive, exp.activation.passive);
+      active = Object.assign({}, active, exp.activation.active);
+    }
+
+
+  
+    return { active: active, passive: passive };
   }
 
   getNewGenes() {
@@ -66,7 +84,7 @@ class Org {
     return {
       body: this.mjsi.addCircle(
         { x: x, y: y, r: bodyRadius,
-          composite: this.composite,
+          composite: this.composite, owner: this,
           options: {...cellBodyDefaults, label: 'nucleus' }
         }
       ), 
@@ -75,31 +93,34 @@ class Org {
   }
 
   getNewExpressions() {
-    let expressions = {};
+    let aggregate = {};
     for (let i = 0; i < this.genes.numSegments; i++) {
       let { color, length } = this.genes.segments[i];
-      if (color in expressions) {
-        expressions[color].length += length;
-        expressions[color].count += 1;
-        expressions[color].setAvgLength();
+      if (color in aggregate) {
+        aggregate[color].length += length;
+        aggregate[color].n += 1;
       }
       else {
-        // let that = this;
-        expressions[color] = getExpression(color, [length, this]);
+        aggregate[color] = {length: length, n: 1}
       }
     }
 
-    for (const [color, exp] of Object.entries(expressions)) {
+    let expressions = {};
+    for (const [color, exp] of Object.entries(aggregate)) {
+      exp.avgLength = exp.length / exp.n;
       let expBody = this.mjsi.addCircle({
         x: this.nucleus.body.position.x,
         y: this.nucleus.body.position.y,
         r: cellScale * exp.avgLength,
-        composite: this.composite,
+        composite: this.composite, owner: this,
         options: { mass: 0, label: 'expression-' + color }
       })
-      exp.setBody(expBody);
+
+      // we need to get the rest of the object...
+      let completeExp = newExpression(color, exp, expBody, this);
+      expressions[color] = completeExp;
     }
-        
+
     return expressions;
   }
 
@@ -113,7 +134,7 @@ class Org {
       { x: this.nucleus.body.position.x, 
         y: this.nucleus.body.position.y, 
         r: r,
-        composite: this.composite,
+        composite: this.composite, owner: this,
         thickness: thickness, nSegs: 8, 
         options: { mass: 1 } }
     )
@@ -128,26 +149,59 @@ class Org {
 
   setBase() {
     this.baseGene = this.genes.segments[0].color;
-    this.baseColor = this.expressions[this.baseGene].color;
+    this.baseColor = this.expressions[this.baseGene].drawColor;
     this.cytoColor = [...this.baseColor, 25];
     this.nuclColor = [...this.baseColor, 225];
   }
 
   updatePassive() {
-    if ("cyan" in this.expressions) {
-      this.expressions.cyan.activate();
-    } 
+    let passiveState = this.defaultState.passive;
+    if (passiveState.applyForce)  passiveState.applyForce();
+    if (passiveState.energy) this.energy += passiveState.energy;
   }
 
-  updateActive(otherOrg) {
+  updateActive() {
+    let activeState = this.defaultState.active;
 
   }
+
 
   static
   orgEvent(organisms, orgA, orgB) {
-    if (orgA.expressions.hasOwnProperty('red')) {
-      orgA.expressions.red.activate(orgB);
+    let eventStateA = { vul: true, energy: 0, kill: false, flags: [] };
+    let eventStateB = { vul: true, energy: 0, kill: false, flags: [] };
+
+    for (let exp of Object.values(orgA.expressions)) {
+      exp.activate(eventStateA);
     }
+
+    for (let exp of Object.values(orgB.expressions)) {
+      exp.activate(eventStateB);
+    }
+
+    // Nullification
+    if (!eventStateA.vul) {
+      if (eventStateB.energy || eventStateB.kill) {
+        eventStateA.flags.push('blue');
+      }
+      eventStateB.energy = 0;
+      eventStateB.kill = false;
+    }
+    if (!eventStateB.vul) {
+      if (eventStateA.energy || eventStateA.kill) {
+        eventStateB.flags.push('blue');
+      }
+      eventStateA.energy = 0;
+      eventStateA.kill = false;
+    }
+
+    // Gains
+    eventStateA.energy = eventStateA.energy - eventStateB.energy;
+    eventStateB.energy = eventStateB.energy - eventStateA.energy;
+    if (eventStateA.energy) eventStateA.flags.push('red')
+    if (eventStateB.energy) eventStateB.flags.push('red')
+    
+
   }
 
   update() {
@@ -162,17 +216,9 @@ class Org {
 
 
   draw() {
-    if (this.eventPaint) {
-      var baseColor = this.eventPaint.baseColor;
-      var cytoColor = this.eventPaint.cytoColor;
 
-      this.eventPaint.timer -= 1;
-      if (this.eventPaint.timer < 0) this.eventPaint = null;
-    }
-    else {
-      var baseColor = this.baseColor;
-      var cytoColor = this.cytoColor;      
-    }
+    var baseColor = this.baseColor;
+    var cytoColor = this.cytoColor;   
 
 
     let p = this.p;
@@ -186,15 +232,17 @@ class Org {
 
     p.stroke('black')
     p.fill(baseColor)
-    p.circle(this.pos.x, this.pos.y, this.diameter)
+    p.circle(this.pos.x, this.pos.y, this.diameter) // Nucleus
 
-    for (let exp in this.expressions) {
-      this.expressions[exp].draw(p)
+
+    
+    for (let exp of Object.values(this.expressions)) { // Draw gene expressions
+      p.fill(...exp.drawColor);
+      p.circle(exp.pos.x, exp.pos.y, exp.diameter);
     }
 
 
   }
-
 
 
   static

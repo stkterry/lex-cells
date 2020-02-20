@@ -8,6 +8,7 @@ const Engine = mjs.Engine;
 const Composite = mjs.Composite;
 const Runner = mjs.Runner;
 const Events = mjs.Events;
+const Common = mjs.Common;
 
 const TAU = Math.PI * 2;
 const PI = Math.PI;
@@ -25,6 +26,7 @@ export class MJSWrapper {
     this.Composite = mjs.Composite;
     this.Runner = mjs.Runner;
     this.Events = mjs.Events;
+    this.Common = mjs.Common;
   }
 
   upTime() {
@@ -61,59 +63,33 @@ export class MJSWrapper {
     World.remove(this.world, ...bodies);
   }
 
-  addTrapezoid({ x = 0, y = 0, w = 10, h = 10, slope = 0, options = {} }) {
-    let body = Bodies.trapezoid(x, y, w, h, slope, options);
-    this.addBody(body);
-    return body;
-  }
+  // addTrapezoid({ x = 0, y = 0, w = 10, h = 10, slope = 0, options = {} }) {
+  //   let body = Bodies.trapezoid(x, y, w, h, slope, options);
+  //   this.addBody(body);
+  //   return body;
+  // }
 
-  addRect({ x = 0, y = 0, w = 10, h = 10, options = {} }) {
-    let body = Bodies.rectangle(x, y, w, h, options);
-    this.addBody(body);
-    return body;
-  }
+  // addRect({ x = 0, y = 0, w = 10, h = 10, options = {} }) {
+  //   let body = Bodies.rectangle(x, y, w, h, options);
+  //   this.addBody(body);
+  //   return body;
+  // }
 
-
-  addCircle({ x = 0, y = 0, r = 10, composite = null, options = {} } = {}) {
+  addCircle({ x = 0, y = 0, r = 10, composite = null, owner = null, options = {} } = {}) {
     let body = Bodies.circle(x, y, r, options);
 
     if (composite) {
       Composite.add(composite, body);
-      body.topParentId = composite.id;
+      body.owner = owner;
     }
     else this.addBody(body);
 
     return body;
   }
 
-  addRectCircle({ x = 0, y = 0, r = 200, thickness = 20, nSegs = 16, options = {} } = {}) {
-    let angDel = TAU / nSegs; // Angle each segment covers.
-    let adjAng = Math.tan(angDel / 2); // The adjacent angle from the circle radius in relation to w of the rect
-    let h = thickness; // h is the height of the rect but thickness of the circle we're creating.
-    let w = 2 * r * adjAng; // bottom of the rect, outer edge of the circle.
-
-    let segments = [];
-    let Rdiff = r - h / 2; // Ensure that outer circle radius matches our intended radius.
-    for (let i = 0; i < nSegs; i++) {
-      let angle = i * angDel;
-      let sx = Rdiff * Math.cos(angle);
-      let sy = Rdiff * Math.sin(angle);
-      // let rect = addRect({ x: sx, y: sy, w: w, h: h, 
-      //   options: { angle: angle - PI / 2} })
-      let rect = Bodies.rectangle(sx, sy, w, h, {angle: angle - PI/2})
-      segments.push(rect);
-    }
-
-    let circle = Body.create({parts: segments});
-    Body.setPosition(circle, { x: x, y: y })
-    World.add(this.world, circle)
-    return circle;
-  } 
-
-
   addSoftCircle({ 
     x = 0, y = 0, r = 200, thickness = 20, 
-    nSegs = 16, composite = null, options = {} } = {}) {
+    nSegs = 16, composite = null, owner = null, options = {} } = {}) {
 
 
     let angDel = TAU / nSegs; // Angle each segment covers.
@@ -131,7 +107,7 @@ export class MJSWrapper {
       let rect = Bodies.rectangle(sx, sy, w, h, 
         { angle: angle - PI / 2, collisionFilter: { group: -1 } })
       segments.push(rect);
-      rect.topParentId = composite.id;
+      rect.owner = owner;
     }
 
     segments.push(segments[0]);
