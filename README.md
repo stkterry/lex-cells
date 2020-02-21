@@ -67,6 +67,12 @@ bubble inside the walls of the cell.  Size is representative of average
 ## Environment
 **Under Construction**
 
+## Supported Browsers
+Right now this frankly isn't even a consideration, though
+it is tested on current versions of both Chrome 80.x and Firefox 72.x
+as of (2/01/2020).  It's not expected to support Microsoft
+browsers but then neither should you be expected to use
+them.
 
 ## To Do
 * Switch from p5 to pure HTML5 Canvas
