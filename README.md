@@ -2,7 +2,7 @@
 
 **Note: Early pre-release, under major construction**
 
-*Code base is presently experimentaly and definitely subject to change.*
+*Code base is presently experimental and definitely subject to change.*
 <p align="center"><img src="./readme_imgs/demo2.gif" alt="Base" width="500"></p>
 
 ## Overview
