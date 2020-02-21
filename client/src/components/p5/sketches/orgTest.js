@@ -1,10 +1,10 @@
 import OrgEnv from "../../../libs/classes/org-env/orgEnv";
 import { CS } from "./orgConfig";
 
-// import CCapture from "ccapture.js";
+import CCapture from "ccapture.js";
 
 const testSketch = (p) => {
-  var capturer = new CCapture({ flags:"--expose-gc", format: 'webm', framrate: 60, timeLimit: 30, display: true });
+  var capturer = new CCapture({ flags:"--expose-gc", format: 'webm', framrate: 60, timeLimit: 59, display: true });
   var recordB;
   var recording = false;
   var startRecording = false;

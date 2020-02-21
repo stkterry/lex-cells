@@ -98,14 +98,18 @@ them.
 * (future) MongoDB
 
 ## Libraries / npm packages
-* Matter.js
+* matterjs
 * poly-decomp
-* p5 (development only)
+* react, react-dom, react-router
+* shortid
+* simplex-noise
+* lodash.clonedeep
+* p5, react-p5-wrapper (development only)
 * CCapture (development only)
 
 ## Custom Libraries / Classes
-* PRNG
+* PRNG (xmur3, xoshiro128)
 * Org/Cell
-* Org Environments
 * Gene Expressions
-* Matter.js wrapper
+* Org Environments
+* matter.js wrapper
