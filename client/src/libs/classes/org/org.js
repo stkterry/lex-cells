@@ -37,8 +37,6 @@ class Org {
   }
 
 
-
-
   getNewGenes() {
     let numSegments = randNumGenes(); // Get the number of gene segments to create.
 
@@ -164,19 +162,6 @@ class Org {
   static
   orgEvent(orgA, orgB) {
 
-    // let aE = {};
-    // let bE = {};
-    // for (let [color, exp] of Object.entries(orgA.defaultState.active)) {
-    //   aE[color] = Object.assign({}, exp);
-    // }
-    // for (let [color, exp] of Object.entries(orgB.defaultState.active)) {
-    //   bE[color] = Object.assign({}, exp);
-    // }
-
-    // console.log(Object.entries(orgA.defaultState.active))
-    // let aE = Object.assign({}, ...orgA.defaultState.active);
-    // let bE = Object.assign({}, ...orgB.defaultState.active); 
-    
     let aE = cloneDeep(orgA.defaultState.active);
     let bE = cloneDeep(orgB.defaultState.active);
 
