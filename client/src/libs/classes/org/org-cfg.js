@@ -1,3 +1,6 @@
+import xorshiro128 from "../../PRNG/xoshiro128";
+const prng = xorshiro128('org-cfg');
+
 
 export const minGeneSegments = 4; // min gene segments
 export const maxGeneSegments = 16; // max gene segments
@@ -9,11 +12,31 @@ export const geneRepCost = 3;
 export const minBodySize = 10;
 export const cellScale = 0.5;
 export const cellBodyDefaults = {
-  mass: 10,
-  frictionAir: 0.01,
+  mass: 10
 }
+export const GeneDefaults = {
+  maxVel: 0.01,
+  greenMult: 1/500,
+  redMult: 1/2,
+  recoilVel: 1
+}
+
 export const cellDefaults = {
-  maxCellVel: 0.01
+  lifespan: 150, // seconds
+  age: 0,
+  energy: 50,
+  upKeepMult: 1/5000,
+}
+
+export const wallDefaults = {
+  thickness: 10, nSegs: 8,
+  compositeOptions: { label: 'wall' },
+  constraintOptions: {
+    length: 1,
+    stiffness: 0.1,
+    damping: 0.1
+  },
+  bodyOptions: {} // mass: 0-1 ?
 }
 
 export const baseColors = new Set(
@@ -24,8 +47,28 @@ export const geneColors = new Set(
    'yellow', 'blue', 'white', 'cyan']
 )
 
+export const activeColors = new Set([
+  'red', 'blue', 'white', 'gray', 'black'
+])
+
+export const passiveColors = new Set([
+  'green', 'cyan', 'yellow'
+])
+
+export const colorCodes = {
+  base: [170, 0, 255], // purple
+  green: [98, 188, 77],
+  red: [255, 64, 64],
+  black: [170, 0, 255], //temp color, should be [30, 30, 30]
+  white: [200, 200, 200],
+  gray: [125, 125, 125],
+  yellow: [213, 150, 44],
+  cyan: [73, 172, 197],
+  blue: [8, 82, 165]
+}
+
 export const randGeneColor = () => {
-  let pick = 20 * Math.random();
+  let pick = 20 * prng();
   if      (pick < 2) return 'white' // 10%
   else if (pick < 4) return 'blue'  // 10%
   else if (pick < 6) return 'yellow'  // 10%
@@ -37,7 +80,7 @@ export const randGeneColor = () => {
 }
 
 export const randBaseGeneColor = () => {
-  let pick = 10 * Math.random();
+  let pick = 10 * prng();
   if      (pick < 2) return 'red' // 20%
   else if (pick < 4) return 'gray' // 20%
   else if (pick < 6) return 'black' // 20%
@@ -46,11 +89,11 @@ export const randBaseGeneColor = () => {
 
 export const randGeneLength = () => {
   let diff = maxGeneLength - minGeneLength;
-  return diff * Math.random() + minGeneLength;
+  return diff * prng() + minGeneLength;
 }
 
 export const randNumGenes = () => {
   let diff = maxGeneSegments - minGeneSegments;
-  let numGenes = diff * Math.random() + minGeneSegments;
+  let numGenes = diff * prng() + minGeneSegments;
   return Math.floor(numGenes);
 }

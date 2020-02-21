@@ -1,3 +1,4 @@
 node_modules
 dist
 src/assets/styles/output.css.map
+.sass-cache

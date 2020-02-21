@@ -1,38 +1,45 @@
+import cloneDeep from "lodash.clonedeep";
 
 import {
   randBaseGeneColor, randGeneColor, randNumGenes, minBodySize, cellScale,
-  baseColors, cellBodyDefaults, cellDefaults, randGeneLength
+  baseColors, cellBodyDefaults, randGeneLength, cellDefaults, wallDefaults
 } from "./org-cfg";
-import { getExpression } from "./gene-expression";
+
+import newExpression from "./gene-func";
 
 class Org {
-  constructor(x = 0, y = 0, mjsi) {
-    this.mjsi = mjsi;
+  constructor(x = 0, y = 0, mjsi, p, uniqId) {
 
-    this.genes = this.constructor.getNewGenes();
+    Object.assign(this, {p, mjsi, id: uniqId}, cellDefaults)
+    this.composite = this.mjsi.createComposite({ label: 'cell' });
 
-    this.getNewNucleus(x, y);
+    this.genes = this.getNewGenes();
+
+    this.nucleus = this.getNewNucleus(x, y)
+    this.expressions = this.getNewExpressions()
+    this.wall = this.getNewWall();
+
     this.pos = this.nucleus.body.position;
     this.diameter = this.nucleus.r * 2;
 
-    this.getNewExpressions()
-
-    this.getNewWall();
-
-    this.applyForce = this.mjsi.constructor
-      .getApplyForceToCenter(this.nucleus.body);
-
-    Object.assign(this, cellDefaults)
-
     this.setBase(); // Set the baseGene name as well as actual colors to be painted.
     // baseGene, baseColor, cytoColor, nuclColor
+    this.eventPaint = null; // After an orgEvent will be filled with colors for the next draw event.
+    
+    this.defaultState = this.getNewDefaultState();
+    this.passiveEvents = [];
+    this.activeEvents = [];
+    this.dEvents = {};
+    // Time of creation
+    this.dead = false;
+    this.creationTime = p.millis();
 
-    // console.log(this.expressions)
   }
 
 
-  static
-    getNewGenes() {
+
+
+  getNewGenes() {
     let numSegments = randNumGenes(); // Get the number of gene segments to create.
 
     let genes = { // Setup inital genes object
@@ -40,17 +47,17 @@ class Org {
       segments: new Array(numSegments)
     }
 
-    genes.segments[0] = {  // 'base' gene color/length
-      color: randBaseGeneColor(),
-      length: randGeneLength()
-    }
-    let gene = null, n = 1; // Getting the rest of the genes.
-    while (n < numSegments) {
+    let gene = null, n = 0; // Getting the rest of the genes.
+    while (n < numSegments-1) {
       gene = randGeneColor();
-      if (true || gene == genes.segments[0].color || !baseColors.has(gene)) {
+      if (true || gene == genes.segments[0].color || !baseColors.has(gene)) { // Currently disabled
         genes.segments[n] = { color: gene, length: randGeneLength() };
         n += 1;
       }
+    }
+    genes.segments[n] = {
+      color: randBaseGeneColor(),
+      length: randGeneLength()
     }
 
     genes['totalGenesLength'] = genes.segments  // Get total genes length;
@@ -65,106 +72,166 @@ class Org {
   getNewNucleus(x, y) {
     let avgGeneArea = this.genes.avgGeneArea
     let bodyRadius = avgGeneArea * 2 < minBodySize ? minBodySize : avgGeneArea;
-
     bodyRadius = cellScale * bodyRadius;
-    this.nucleus = {
+
+    return {
       body: this.mjsi.addCircle(
-        { x: x, y: y, r: bodyRadius, options: cellBodyDefaults }
+        { x: x, y: y, r: bodyRadius,
+          composite: this.composite, owner: this,
+          options: {...cellBodyDefaults, label: 'nucleus' }
+        }
       ), 
       r: bodyRadius
     }
-    // bodyRadius = cellScale * bodyRadius; // Set scale of object.
-    // let body = 
-    // return [bodyRadius, body];
   }
 
   getNewExpressions() {
-    this.expressions = {};
+    let aggregate = {};
     for (let i = 0; i < this.genes.numSegments; i++) {
       let { color, length } = this.genes.segments[i];
-      if (color in this.expressions) {
-        this.expressions[color].length += length;
-        this.expressions[color].count += 1;
-        this.expressions[color].setAvgLength();
+      if (color in aggregate) {
+        aggregate[color].length += length;
+        aggregate[color].n += 1;
       }
       else {
-        this.expressions[color] = getExpression(color, [length, this.nucleus.body]);
+        aggregate[color] = {length: length, n: 1}
       }
     }
 
-    let maxConstraintDist = 0;
-    for (const [_, exp] of Object.entries(this.expressions)) {
-
-      let constraintDist = (this.nucleus.r + cellScale * exp.avgLength) // Distance between nucleus and gene expression.
-        * (1 + cellScale * Math.random() / 3);
-      
-      if (constraintDist + exp.avgLength > maxConstraintDist) {
-        maxConstraintDist = constraintDist + exp.avgLength;
-      }
-
+    let expressions = {};
+    for (const [color, exp] of Object.entries(aggregate)) {
+      exp.avgLength = exp.length / exp.n;
       let expBody = this.mjsi.addCircle({
-        x: this.pos.x 
-          + cellScale * (minBodySize * Math.random() - minBodySize / 2),
-        y: this.pos.y
-          + cellScale * (minBodySize * Math.random() - minBodySize / 2),
+        x: this.nucleus.body.position.x,
+        y: this.nucleus.body.position.y,
         r: cellScale * exp.avgLength,
-        options: { mass: 0 }
+        composite: this.composite, owner: this,
+        options: { mass: 0, label: 'expression-' + color }
       })
-      
-      let constraintOptions = {
-        bodyA: this.nucleus.body,
-        bodyB: expBody,
-        length: constraintDist,
-        stiffness: 0
-      }
 
-      // let expConstraint = this.mjsi.addConstraint(constraintOptions);
-
-      exp.body = expBody;
-      // exp.constraint = expConstraint;
+      // we need to get the rest of the object...
+      let completeExp = newExpression(color, exp, expBody, this);
+      expressions[color] = completeExp;
     }
 
-    if (this.wall) this.wall['r'] = maxConstraintDist;
-    else (this.wall = {r: maxConstraintDist});
-    
+    return expressions;
   }
 
   getNewWall() {
-    let thickness = 10;
-    let offset = thickness / 2;
-    let [segments, constraints] = this.mjsi.addSoftCircle(
-      { x: this.pos.x, y: this.pos.y, r: this.wall.r + offset, thickness: thickness,
-        nSegs: 8, options: { mass: 1 } }
-    )
-    this.wall['segments'] = segments;
-    this.wall['constraints'] = constraints;
+    let offset = 5;
+    let r = Math.max(...Object.values(this.expressions)
+      .map(exp => exp.avgLength)) + this.nucleus.r + offset + 5;
+
+    let[segments, constraints] = this.mjsi.addSoftCircle({
+      x: this.nucleus.body.position.x,
+      y: this.nucleus.body.position.y,
+      r: r,
+      owner: this, composite: this.composite,
+      ...wallDefaults
+    })
+    
+    let wall = {
+      segments: segments,
+      constraints: constraints,
+      r: r,
+    }
+
+    return wall;
   }
 
   setBase() {
     this.baseGene = this.genes.segments[0].color;
-    this.baseColor = this.expressions[this.baseGene].color;
+    this.baseColor = this.expressions[this.baseGene].drawColor;
     this.cytoColor = [...this.baseColor, 25];
-    this.nuclColor = [...this.baseColor, 10];
+    this.nuclColor = [...this.baseColor, 225];
   }
 
+  getNewDefaultState() {
+    let passive = {};
+    let active = {};
+    for (let exp of Object.values(this.expressions)) {
+      passive = Object.assign({}, passive, exp.activation.passive);
+      active = Object.assign({}, active, exp.activation.active);
+    }
+    return { active: active, passive: passive };
+  }
 
-  moveRandom() {
-    let vx = this.maxCellVel * Math.random() - this.maxCellVel / 2;
-    let vy = this.maxCellVel * Math.random() - this.maxCellVel / 2;
-    this.applyForce({ x: vx, y: vy })
+  die() {
+    this.mjsi.removeBody(this.composite);
+    this.dead = true;
+  }
+
+  static
+  orgEvent(orgA, orgB) {
+
+    // let aE = {};
+    // let bE = {};
+    // for (let [color, exp] of Object.entries(orgA.defaultState.active)) {
+    //   aE[color] = Object.assign({}, exp);
+    // }
+    // for (let [color, exp] of Object.entries(orgB.defaultState.active)) {
+    //   bE[color] = Object.assign({}, exp);
+    // }
+
+    // console.log(Object.entries(orgA.defaultState.active))
+    // let aE = Object.assign({}, ...orgA.defaultState.active);
+    // let bE = Object.assign({}, ...orgB.defaultState.active); 
+    
+    let aE = cloneDeep(orgA.defaultState.active);
+    let bE = cloneDeep(orgB.defaultState.active);
+
+    for (let activation of Object.values(aE)) activation.setup(orgB, bE);
+    for (let activation of Object.values(bE)) activation.setup(orgA, aE);
+
+    orgA.activeEvents.push(...Object.values(aE));
+    orgB.activeEvents.push(...Object.values(bE));
   }
 
   update() {
-    if ("cyan" in this.expressions) {
-      this.expressions["cyan"].activate();
+    // Age
+    this.age = Math.floor((this.p.millis() - this.creationTime) / 1000)
+    if (this.age > this.lifespan) {
+      this.die();
+      return true;
     }
 
+
+    // Update active events;
+    for (let i = 0; i < this.activeEvents.length; i++) {
+      this.activeEvents[i].activation();
+    }
+    this.activeEvents = [];
+
+    // Update passive events;
+    if (this.passiveEvents.length == 0) {
+      for (let activation of Object.values(this.defaultState.passive)) {
+        activation();
+      }
+    } else {
+      for (let activation in this.passiveEvents) activation();
+      this.passiveEvents = [];
+    }
+
+    // Upkeep Costs
+    this.energy -= this.genes.totalGenesLength * this.upKeepMult
+
+    // Check energy levels
+    if (this.energy <= 0) this.die();
+
+    
+
+    return false;
   }
 
+  draw() {
 
-  disp(p) {
-    p.fill(this.cytoColor)
-    p.stroke(this.baseColor)
+    var baseColor = this.baseColor;
+    var cytoColor = this.cytoColor;   
+
+
+    let p = this.p;
+    p.fill(cytoColor)
+    p.stroke(baseColor)
     p.beginShape();
     for (let seg of this.wall.segments) {
       p.curveVertex(seg.position.x, seg.position.y)
@@ -172,33 +239,25 @@ class Org {
     p.endShape(p.CLOSE);
 
     p.stroke('black')
-    p.fill(this.baseColor)
-    p.circle(this.pos.x, this.pos.y, this.diameter)
+    p.fill(baseColor)
+    p.circle(this.pos.x, this.pos.y, this.diameter) // Nucleus
 
-    for (let exp in this.expressions) {
-      this.expressions[exp].disp(p)
+
+    for (let exp of Object.values(this.expressions)) { // Draw gene expressions
+      if (this.dEvents[exp.color]) {
+        p.fill(exp.color);
+        p.circle(exp.pos.x, exp.pos.y, exp.diameter*1.5);
+        this.dEvents[exp.color] -= 1;
+      } else if (exp.color == 'green') { 
+        p.fill(...exp.drawColor);
+        p.circle(exp.pos.x, exp.pos.y, exp.diameter + 2*Math.cos(this.p.millis()/1000));
+      } else {
+        p.fill(...exp.drawColor);
+        p.circle(exp.pos.x, exp.pos.y, exp.diameter);
+      }
     }
 
   }
-
-  removeWall() {
-    this.mjsi.removeBody(this.wall.segments)
-    this.mjsi.removeBody(this.wall.constraints)
-
-  }
-
-  removeExpressions() {
-    for (let gene in this.expressions) {
-      let exp = this.expressions[gene];
-      this.mjsi.removeBody(exp.body, exp.constraint)
-    }
-  }
-
-  removeBody() {
-    this.mjsi.removeBody(this.nucleus.body);
-  }
-
-
 
 }
 

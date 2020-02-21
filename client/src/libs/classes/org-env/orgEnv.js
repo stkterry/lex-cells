@@ -1,37 +1,41 @@
-import { MJSWrapper } from "../matterHelpers";
+import shortid from "shortid";
 
-import Org from "../org/org";
+import { MJSWrapper } from "../matterHelpers";
 import { boundsThickness } from "./orgEnv-config";
+import xorshiro128 from "../../PRNG/xoshiro128";
+import Org from "../org/org";
+
+const prng = xorshiro128('orgEnv');
+shortid.seed(666);
+
 
 class OrgEnv {
   constructor(p, w, h) {
     this.p = p;
-    this.mjsi = new MJSWrapper();
     this.w = w;
     this.h = h;
+    this.mjsi = new MJSWrapper();
+    this.idGen = shortid.generate;
 
     this.mjsi.world.gravity.y = 0;
     this.mjsi.setWorldBounds(w, h, boundsThickness);
     this.organisms = [];
+
+    this.setupEvents();
   }
 
   addNOrgs(n) {
     let orgs = [];
     while (orgs.length < n) {
-      let org = new Org(...this.randXY(), this.mjsi);
+      let uniqId = this.idGen();
+      let org = new Org(...this.randXY(), this.mjsi, this.p, uniqId);
       if (OrgEnv.overlaps(org, orgs)) {
-        this.kill(org);
+        org.die();
       } else {
         orgs.push(org);
       }
     }
     this.organisms.push(...orgs);
-  }
-
-  kill(org) {
-    org.removeWall();
-    org.removeExpressions();
-    org.removeBody();
   }
 
   static
@@ -48,25 +52,96 @@ class OrgEnv {
   updateEnv() {
     for (let i = 0; i < this.organisms.length; i++) {
       this.organisms[i].update();
-      // console.log(this.organisms[i])
+      if (this.organisms[i].dead) this.organisms.splice(i, 1);
     }
   }
 
-  moveOrgs() {
-    for (let org of this.organisms) org.moveRandom();
+  setupEvents() {
+    this.mjsi.Events.on(this.mjsi.engine, 'collisionStart', (event) => {
+      let pairs = event.pairs.filter(pair => {
+        return pair.bodyA.owner != pair.bodyB.owner
+          && pair.bodyA.owner && pair.bodyB.owner
+      })
+      for (let pair of pairs) {
+        Org.orgEvent(
+          pair.bodyA.owner, pair.bodyB.owner);
+      }
+    })
   }
 
-  dispOrgs() {
-    for (let org of this.organisms) org.disp(this.p);
+  // setupEvents() {
+  //   this.mjsi.Events.on(this.mjsi.engine, 'collisionStart', (event) => {
+  //     let pairs = this.uniqPairs(event.pairs)
+
+  //     for (let pair of pairs) {
+  //       Org.orgEvent(this.organisms, pair.orgA, pair.orgB);
+  //     }
+  //   })
+  // }
+
+  uniqPairs(pairs) {
+    let seen = new Set();
+    let out = new Array(pairs.length);
+    let len = pairs.length;
+    let j = 0;
+
+
+    for (let i = 0; i < len; i++) {
+      let orgA = pairs[i].bodyA.owner;
+      let orgB = pairs[i].bodyB.owner;
+
+      if (!orgA || !orgB) continue;
+      if (orgA == orgB) continue;
+
+      let idF = (orgA.id).toString() + (orgB.id).toString();
+      let idB = (orgB.id).toString() + (orgA.id).toString();
+
+      if (!seen.has(idF) && !seen.has(idB)) {
+        let pair = { orgA: orgA, orgB: orgB };
+        seen.add(idF)
+        out[j] = pair;
+        j += 1;
+      }
+    }
+    return out.slice(0, j);
+  }
+
+  drawOrgs() {
+    for (let org of this.organisms) org.draw();
   }
 
   randXY() {
     let limit = 50;
-    let x = limit + (this.w - limit*2) * Math.random();
-    let y = limit + (this.h - limit*2) * Math.random();
+    let x = limit + (this.w - limit*2) * prng();
+    let y = limit + (this.h - limit*2) * prng();
     return [x, y]
   }
 
 }
+
+
+// function uniqPairs(pairs) {
+//   let seen = new Set();
+//   let out = new Array(pairs.length);
+//   let len = pairs.length;
+//   let j = 0;
+
+//   for (let i = 0; i < len; i++) {
+//     let orgA = pairs[i].bodyA.owner;
+//     let orgB = pairs[i].bodyB.owner;
+
+
+//     // var idF = (orgA.id).toString() + (orgB.id).toString();
+//     // var idB = (orgB.id).toString() + (orgA.id).toString();
+
+//     // if (!seen.has(idF) && !seen.has(idB)) {
+//     //   var pair = { orgA: orgA, orgB: orgB };
+//     //   seen.add(idF)
+//     //   out[j] = pair;
+//     //   j += 1;
+//     // }
+//   }
+//   // return out.slice(0, j);
+// }
 
 export default OrgEnv;
