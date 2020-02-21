@@ -63,18 +63,6 @@ export class MJSWrapper {
     World.remove(this.world, ...bodies);
   }
 
-  // addTrapezoid({ x = 0, y = 0, w = 10, h = 10, slope = 0, options = {} }) {
-  //   let body = Bodies.trapezoid(x, y, w, h, slope, options);
-  //   this.addBody(body);
-  //   return body;
-  // }
-
-  // addRect({ x = 0, y = 0, w = 10, h = 10, options = {} }) {
-  //   let body = Bodies.rectangle(x, y, w, h, options);
-  //   this.addBody(body);
-  //   return body;
-  // }
-
   addCircle({ x = 0, y = 0, r = 10, composite = null, owner = null, options = {} } = {}) {
     let body = Bodies.circle(x, y, r, options);
 
@@ -87,10 +75,13 @@ export class MJSWrapper {
     return body;
   }
 
-  addSoftCircle({ 
-    x = 0, y = 0, r = 200, thickness = 20, 
-    nSegs = 16, composite = null, owner = null, options = {} } = {}) {
-
+  addSoftCircle({
+    x, y, r, thickness, nSegs,
+    owner = null, composite = null,
+    compositeOptions = {},
+    constraintOptions = {},
+    bodyOptions = {}
+    } = {}) {
 
     let angDel = TAU / nSegs; // Angle each segment covers.
     let adjAng = Math.tan(angDel / 2); // The adjacent angle from the circle radius in relation to w of the rect
@@ -105,7 +96,7 @@ export class MJSWrapper {
       let sx = rDiff * Math.cos(angle) + x;
       let sy = rDiff * Math.sin(angle) + y;
       let rect = Bodies.rectangle(sx, sy, w, h, 
-        { angle: angle - PI / 2, collisionFilter: { group: -1 } })
+        { angle: angle - PI / 2, collisionFilter: { group: -1 }, ...bodyOptions })
       segments.push(rect);
       rect.owner = owner;
     }
@@ -124,14 +115,13 @@ export class MJSWrapper {
       let pointA = { x: sx1 - sx0, y: sy1 - sy0 }
       let pointB = { x: sx1 - sx2, y: sy1 - sy2 }
       let optsEdge = {
-        bodyA: segments[i],
-        bodyB: segments[i + 1],
-        pointA: pointA,
-        pointB: pointB,
-        length: 1,
-        stiffness: 0.1,
-        damping: 0.1
-      }
+          bodyA: segments[i],
+          bodyB: segments[i + 1],
+          pointA: pointA,
+          pointB: pointB,
+          ...constraintOptions
+        }
+
       let constraint = Constraint.create(optsEdge);
       constraints.push(constraint);
     }
@@ -139,7 +129,7 @@ export class MJSWrapper {
     segments.pop();
     if (composite) {
     
-      let wallComposite = Composite.create({ label: 'wall' });
+      let wallComposite = Composite.create(compositeOptions);
       Composite.add(wallComposite, segments);
       Composite.add(wallComposite, constraints);
       Composite.add(composite, wallComposite);
@@ -160,6 +150,20 @@ export class MJSWrapper {
 
   run() {
     Engine.run(this.engine);
+  }
+
+  stop() {
+    this.engine.enabled = false;
+  }
+
+  static
+  setVelocity(body, vecV) {
+    Body.setVelocity(body, vecV);
+  }
+
+  static
+  applyForce(body, vecF) {
+    Body.applyForce(body, body.position, vecF)
   }
 
   static

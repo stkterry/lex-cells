@@ -2,3 +2,4 @@ node_modules
 .sass-cache
 dist
 src/assets/styles/output.css.map
+.firefox-snapshots

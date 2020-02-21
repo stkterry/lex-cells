@@ -3,7 +3,7 @@
 **Note: Early pre-release, under major construction**
 
 *Code base is presently experimentaly and definitely subject to change.*
-<p align="center"><img src="./readme_imgs/demo1.gif" alt="Base" width="500"></p>
+<p align="center"><img src="./readme_imgs/demo2.gif" alt="Base" width="500"></p>
 
 ## Overview
 A simulation of evolution, mutation, and survival for single-celled organisms.
@@ -47,7 +47,7 @@ reproduction.  For now movement is random.
 #### Energy Production
   * *Green* - Photosynthesis
   * *Red* - Predator Behavior / Attacking other cells
-  * *Black* - Scavenger / Eats dead and decaying cells and matter
+  * *Black (currently purple)* - Scavenger / Eats dead and decaying cells and matter
   * *Gray* - Infectious / Infects cells it contacts to replicate virally
 
 #### Abilities
@@ -76,6 +76,7 @@ bubble inside the walls of the cell.  Size is representative of average
 * Steering behaviors
 * Frontend
 * Backend
+*See project details, there's plenty missing there too*
 
 
 
@@ -97,7 +98,8 @@ bubble inside the walls of the cell.  Size is representative of average
 * CCapture (development only)
 
 ## Custom Libraries / Classes
+* PRNG
 * Org/Cell
 * Org Environments
 * Gene Expressions
-* Matter.js wrappers
+* Matter.js wrapper

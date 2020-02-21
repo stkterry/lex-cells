@@ -28,6 +28,7 @@
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
+    "lodash.clonedeep": "^4.5.0",
     "matter-js": "^0.14.2",
     "p5": "^0.10.2",
     "poly-decomp": "^0.3.0",

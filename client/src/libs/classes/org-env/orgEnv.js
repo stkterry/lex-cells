@@ -19,10 +19,9 @@ class OrgEnv {
 
     this.mjsi.world.gravity.y = 0;
     this.mjsi.setWorldBounds(w, h, boundsThickness);
-    this.organisms = {};
-    this.orgsArray = [];
+    this.organisms = [];
 
-    // this.setupEvents();
+    this.setupEvents();
   }
 
   addNOrgs(n) {
@@ -31,13 +30,12 @@ class OrgEnv {
       let uniqId = this.idGen();
       let org = new Org(...this.randXY(), this.mjsi, this.p, uniqId);
       if (OrgEnv.overlaps(org, orgs)) {
-        Org.kill(org);
+        org.die();
       } else {
         orgs.push(org);
-        // this.organisms[org.id] = org;
       }
     }
-    this.orgsArray.push(...orgs);
+    this.organisms.push(...orgs);
   }
 
   static
@@ -52,12 +50,10 @@ class OrgEnv {
   }
 
   updateEnv() {
-    for (let i = 0; i < this.orgsArray.length; i++) {
-      this.orgsArray[i].updatePassive();
+    for (let i = 0; i < this.organisms.length; i++) {
+      this.organisms[i].update();
+      if (this.organisms[i].dead) this.organisms.splice(i, 1);
     }
-    // for (let id in this.organisms) {
-    //   this.organisms[id].updatePassive();
-    // }
   }
 
   setupEvents() {
@@ -67,7 +63,7 @@ class OrgEnv {
           && pair.bodyA.owner && pair.bodyB.owner
       })
       for (let pair of pairs) {
-        Org.orgEvent(this.organisms, 
+        Org.orgEvent(
           pair.bodyA.owner, pair.bodyB.owner);
       }
     })
@@ -111,7 +107,7 @@ class OrgEnv {
   }
 
   drawOrgs() {
-    for (let org of this.orgsArray) org.draw();
+    for (let org of this.organisms) org.draw();
   }
 
   randXY() {

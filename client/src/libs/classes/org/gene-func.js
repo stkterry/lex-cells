@@ -22,13 +22,26 @@ export default function newExpression(color, exp, body, parentCell) {
   return expObj;
 }
 
-function RedExpression({ length = 0 }) {
-  // i need active/passive
-  // function or value assignment
-
+function RedExpression({ length, parentCell }) {
+  const expectedEnergy = GeneDefaults.redMult * length;
   let activation = {
     active: {
-      energy: GeneDefaults.redMult * length
+      red: {
+        activation: function () {
+          parentCell.dEvents.red = 10;
+          if (!this.isActive) return;
+
+          let energy = (this.otherCell.energy - expectedEnergy < 0) ? 
+            this.otherCell.energy : expectedEnergy;
+          parentCell.energy += energy;
+          this.otherCell.energy -= energy;
+        },
+        isActive: true,
+        setup: function(otherCell, state) {
+          this.otherCell = otherCell;
+        }
+      }
+
     },
     passive: {}
   }
@@ -36,19 +49,19 @@ function RedExpression({ length = 0 }) {
   return activation;
 }
 
-function GreenExpression({ length = 0 }) {
+function GreenExpression({ length, parentCell }) {
   
   let activation = {
     active: {}, 
     passive: {
-      energy: GeneDefaults.greenMult * length
+      green: function() {parentCell.energy += GeneDefaults.greenMult * length}
     }
   }
 
   return activation;
 }
 
-function BlackExpression({ length = 0 }) {
+function BlackExpression({ length }) {
   let activation = {
     active: {},
     passive: {}
@@ -56,7 +69,7 @@ function BlackExpression({ length = 0 }) {
   return activation;
 }
 
-function WhiteExpression({ length = 0 }) {
+function WhiteExpression({ length }) {
   let activation = {
     active: {},
     passive: {}
@@ -64,7 +77,7 @@ function WhiteExpression({ length = 0 }) {
   return activation;
 }
 
-function GrayExpression({ length = 0 }) {
+function GrayExpression({ length }) {
   let activation = {
     active: {},
     passive: {}
@@ -72,7 +85,7 @@ function GrayExpression({ length = 0 }) {
   return activation;
 }
 
-function YellowExpression({ length = 0 }) {
+function YellowExpression({ length }) {
   let activation = {
     active: {},
     passive: {}
@@ -80,13 +93,34 @@ function YellowExpression({ length = 0 }) {
   return activation;
 }
 
-function CyanExpression({length = 0, parentCell = null }) {
+function CyanExpression({ length, parentCell }) {
   var lim = GeneDefaults.maxVel * (length / (1 + length));
   const applyForce = MJSWrapper.getApplyForceToCenter(parentCell.nucleus.body)
   let activation = {
-    active: {},
+    active: {
+      cyan: {
+        activation() {
+          if (!this.isActive) return;          
+          let dx = parentCell.pos.x - this.otherCell.pos.x;
+          let dy = parentCell.pos.y - this.otherCell.pos.y;
+          let fNorm = GeneDefaults.recoilVel / Math.sqrt(dx * dx + dy * dy);
+          let vecV = { x: dx * fNorm, y: dy * fNorm };
+          MJSWrapper.setVelocity(parentCell.nucleus.body, vecV);
+
+          parentCell.dEvents.cyan = 10;
+        },
+        isActive: false,
+        setup(otherCell, otherState) {
+          if (otherState.hasOwnProperty('red') 
+              && !parentCell.expressions.hasOwnProperty('blue')) {
+                this.isActive = true;
+                this.otherCell = otherCell;
+              }
+        }
+      }
+    },
     passive: {
-      applyForce: function() {
+      cyan: function() {
         let vx = lim * prng() - lim / 2;
         let vy = lim * prng() - lim / 2;
         applyForce({x: vx, y: vy});
@@ -98,9 +132,24 @@ function CyanExpression({length = 0, parentCell = null }) {
 }
 
 
-function BlueExpression({ length = 0 }) {
+function BlueExpression({ length, parentCell }) {
   let activation = {
-    active: {},
+    active: {
+      blue: {
+        activation() {},
+        isActive: true,
+        setup(otherCell, otherState) { 
+          if (otherState.hasOwnProperty('red')) { 
+            otherState.red.isActive = false;
+            parentCell.dEvents.blue = 10;
+          }
+          if (otherState.hasOwnProperty('white')) {
+            otherState.white.isActive = false;
+            parentCell.dEvents.blue = 10;
+          }
+        }
+      }
+    },
     passive: {}
   }
   return activation;

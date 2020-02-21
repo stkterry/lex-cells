@@ -18,18 +18,25 @@ export const GeneDefaults = {
   maxVel: 0.01,
   greenMult: 1/500,
   redMult: 1/2,
+  recoilVel: 1
 }
 
 export const cellDefaults = {
-  lifespan: 30,
+  lifespan: 150, // seconds
   age: 0,
   energy: 50,
   upKeepMult: 1/5000,
 }
 
-export const eventStateDefaults = {
-  vul: true, energy: 0, kill: false,
-  flags:[]
+export const wallDefaults = {
+  thickness: 10, nSegs: 8,
+  compositeOptions: { label: 'wall' },
+  constraintOptions: {
+    length: 1,
+    stiffness: 0.1,
+    damping: 0.1
+  },
+  bodyOptions: {} // mass: 0-1 ?
 }
 
 export const baseColors = new Set(
@@ -52,7 +59,7 @@ export const colorCodes = {
   base: [170, 0, 255], // purple
   green: [98, 188, 77],
   red: [255, 64, 64],
-  black: [30, 30, 30],
+  black: [170, 0, 255], //temp color, should be [30, 30, 30]
   white: [200, 200, 200],
   gray: [125, 125, 125],
   yellow: [213, 150, 44],

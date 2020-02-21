@@ -45,6 +45,7 @@ const testSketch = (p) => {
     //   orgEnv.mjsi.nextTick(p.frameRate() / 60)
     // }
 
+    if (orgEnv.orgsArray == 0) orgEnv.addNOrgs(50);
 
     fpsP.html(p.getFrameRate().toFixed(2));
   }
