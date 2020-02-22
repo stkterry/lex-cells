@@ -19,7 +19,7 @@ const testSketch = (p) => {
   var startStopEngine;
   var startStopEngineBool = true;
 
-  var framesContainer = new Array(30).fill(30);
+  var framesContainer = new Array(15).fill(60);
 
   p.setup = () => {
     p.disableFriendlyErrors = true;
@@ -60,7 +60,7 @@ const testSketch = (p) => {
     
     if (startStopEngineBool) {
       orgEnv.updateEnv();
-      orgEnv.mjsi.nextTick(p.millis() / p.getFrameRate())
+      orgEnv.mjsi.smoothUpdate(1100 / avgFrameRate())
     }
 
   
@@ -73,6 +73,7 @@ const testSketch = (p) => {
     if (recording) {
       capturer.capture(document.getElementById("defaultCanvas0"))
     }
+
   }
 
   function debugNextFrame() {
@@ -91,8 +92,8 @@ const testSketch = (p) => {
   }
 
   function avgFrameRate() {
-    framesContainer[p.frameCount % 30] = p.frameRate();
-    return framesContainer.reduce((a, b) => a + b, 0) / 30;
+    framesContainer[p.frameCount % 15] = p.frameRate();
+    return framesContainer.reduce((a, b) => a + b, 0) / 15;
   }
 
 

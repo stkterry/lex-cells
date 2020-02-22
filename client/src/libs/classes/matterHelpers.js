@@ -6,9 +6,9 @@ const World = mjs.World;
 const Constraint = mjs.Constraint;
 const Engine = mjs.Engine;
 const Composite = mjs.Composite;
-const Runner = mjs.Runner;
-const Events = mjs.Events;
-const Common = mjs.Common;
+// const Runner = mjs.Runner;
+// const Events = mjs.Events;
+// const Common = mjs.Common;
 
 const TAU = Math.PI * 2;
 const PI = Math.PI;
@@ -16,8 +16,8 @@ const PI = Math.PI;
 export class MJSWrapper {
   constructor() {
     this.engine = Engine.create();
-    this.runner = Runner.create();
     this.world = this.engine.world;
+    this.lastDelta = 60;
 
     this.Body = mjs.Body;
     this.World = mjs.World;
@@ -33,8 +33,9 @@ export class MJSWrapper {
     return this.engine.timing.timestamp;
   }
 
-  nextTick(delta) {
-    Runner.tick(this.runner, this.engine, delta);
+  smoothUpdate(delta) {
+    Engine.update(this.engine, delta, delta/this.lastDelta)
+    this.lastDelta = delta;
   }
 
   createComposite(options) {
@@ -44,8 +45,7 @@ export class MJSWrapper {
   }
 
   addToComposite(composite, ...elements) {
-    Composite.add(composite, ...elements)
-    return composite  
+    Composite.add(composite, ...elements) 
   }
 
   addConstraint(options, composite=null) {
@@ -141,7 +141,7 @@ export class MJSWrapper {
     }
 
     return [segments, constraints]
-  } 
+  }
 
   setWorldBounds(w, h, boundsThickness) {
     this.bounds = this.constructor.getBounds(w, h, boundsThickness)
