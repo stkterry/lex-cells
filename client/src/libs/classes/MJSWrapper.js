@@ -6,14 +6,14 @@ const World = mjs.World;
 const Constraint = mjs.Constraint;
 const Engine = mjs.Engine;
 const Composite = mjs.Composite;
+const Events = mjs.Events;
 // const Runner = mjs.Runner;
-// const Events = mjs.Events;
 // const Common = mjs.Common;
 
 const TAU = Math.PI * 2;
 const PI = Math.PI;
 
-export class MJSWrapper {
+class MJSWrapper {
   constructor() {
     this.engine = Engine.create();
     this.world = this.engine.world;
@@ -27,6 +27,14 @@ export class MJSWrapper {
     this.Runner = mjs.Runner;
     this.Events = mjs.Events;
     this.Common = mjs.Common;
+  }
+
+  eventsOn(condition, cb) {
+    Events.on(this.engine, condition, cb);
+  }
+
+  setGravityY(val) {
+    this.world.gravity.y = val;
   }
 
   upTime() {
@@ -156,7 +164,6 @@ export class MJSWrapper {
     this.engine.enabled = false;
   }
 
-  static
   setVelocity(body, vecV) {
     Body.setVelocity(body, vecV);
   }
@@ -166,7 +173,6 @@ export class MJSWrapper {
     Body.applyForce(body, body.position, vecF)
   }
 
-  static
   getApplyForceToCenter(body) {
     return function(vecF) {
       Body.applyForce(body, body.position, vecF)
@@ -190,3 +196,6 @@ export class MJSWrapper {
   }
 
 }
+
+const MJSW = new MJSWrapper();
+export default MJSW;

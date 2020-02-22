@@ -1,24 +1,19 @@
-import shortid from "shortid";
 
-import { MJSWrapper } from "../matterHelpers";
+
+import MJSW from "../MJSWrapper";
 import { boundsThickness } from "./orgEnv-config";
-import xorshiro128 from "../../PRNG/xoshiro128";
 import Org from "../org/org";
-
+import xorshiro128 from "../../PRNG/xoshiro128";
 const prng = xorshiro128('orgEnv');
-shortid.seed(666);
-
 
 class OrgEnv {
   constructor(p, w, h) {
     this.p = p;
     this.w = w;
     this.h = h;
-    this.mjsi = new MJSWrapper();
-    this.idGen = shortid.generate;
 
-    this.mjsi.world.gravity.y = 0;
-    this.mjsi.setWorldBounds(w, h, boundsThickness);
+    MJSW.setGravityY(0);
+    MJSW.setWorldBounds(w, h, boundsThickness);
     this.organisms = [];
 
     this.setupEvents();
@@ -27,8 +22,8 @@ class OrgEnv {
   addNOrgs(n) {
     let orgs = [];
     while (orgs.length < n) {
-      let uniqId = this.idGen();
-      let org = new Org(...this.randXY(), this.mjsi, this.p, uniqId);
+
+      let org = new Org(...this.randXY(), this.p);
       if (OrgEnv.overlaps(org, orgs)) {
         org.die();
       } else {
@@ -57,7 +52,7 @@ class OrgEnv {
   }
 
   setupEvents() {
-    this.mjsi.Events.on(this.mjsi.engine, 'collisionStart', (event) => {
+    MJSW.eventsOn('collisionStart', (event) => {
       let pairs = event.pairs.filter(pair => {
         return pair.bodyA.owner != pair.bodyB.owner
           && pair.bodyA.owner && pair.bodyB.owner
@@ -70,7 +65,7 @@ class OrgEnv {
   }
 
   // setupEvents() {
-  //   this.mjsi.Events.on(this.mjsi.engine, 'collisionStart', (event) => {
+  //   MJSW.Events.on(MJSW.engine, 'collisionStart', (event) => {
   //     let pairs = this.uniqPairs(event.pairs)
 
   //     for (let pair of pairs) {

@@ -1,5 +1,6 @@
 import OrgEnv from "../../../libs/classes/org-env/orgEnv";
 import { CS } from "./orgConfig";
+import MJSW from "../../../libs/classes/MJSWrapper";
 
 import CCapture from "ccapture.js";
 
@@ -46,7 +47,6 @@ const testSketch = (p) => {
     orgEnv = new OrgEnv(p, CS.w, CS.h);
     orgEnv.addNOrgs(50);
 
-    // orgEnv.mjsi.run()
   }
 
   p.draw = () => {
@@ -55,12 +55,11 @@ const testSketch = (p) => {
       startRecording = false;
     }
 
-    p.background(0);
-    orgEnv.drawOrgs();
-    
     if (startStopEngineBool) {
+      MJSW.smoothUpdate(1100 / avgFrameRate())
       orgEnv.updateEnv();
-      orgEnv.mjsi.smoothUpdate(1100 / avgFrameRate())
+      p.background(0);
+      orgEnv.drawOrgs();
     }
 
   
@@ -77,8 +76,10 @@ const testSketch = (p) => {
   }
 
   function debugNextFrame() {
+    MJSW.smoothUpdate(1100 / avgFrameRate())
     orgEnv.updateEnv();
-    orgEnv.mjsi.nextTick(p.frameRate() / 60)
+    p.background(0);
+    orgEnv.drawOrgs();
   }
 
   function start_stop() {

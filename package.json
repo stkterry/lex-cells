@@ -10,6 +10,10 @@
     "concurrently": "^5.1.0",
     "nodemon": "^2.0.2"
   },
+  "engines": {
+    "node": ">=10.0.0",
+    "npm": ">=6.0.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "client-install": "npm install --prefix client",
@@ -26,6 +30,6 @@
     "url": "git+https://github.com/stkterry/lex-cells.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "StevenKT",
+  "license": "GPLv3"
 }
