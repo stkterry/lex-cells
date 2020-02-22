@@ -6,18 +6,18 @@ const World = mjs.World;
 const Constraint = mjs.Constraint;
 const Engine = mjs.Engine;
 const Composite = mjs.Composite;
-const Runner = mjs.Runner;
 const Events = mjs.Events;
-const Common = mjs.Common;
+// const Runner = mjs.Runner;
+// const Common = mjs.Common;
 
 const TAU = Math.PI * 2;
 const PI = Math.PI;
 
-export class MJSWrapper {
+class MJSWrapper {
   constructor() {
     this.engine = Engine.create();
-    this.runner = Runner.create();
     this.world = this.engine.world;
+    this.lastDelta = 60;
 
     this.Body = mjs.Body;
     this.World = mjs.World;
@@ -29,12 +29,21 @@ export class MJSWrapper {
     this.Common = mjs.Common;
   }
 
+  eventsOn(condition, cb) {
+    Events.on(this.engine, condition, cb);
+  }
+
+  setGravityY(val) {
+    this.world.gravity.y = val;
+  }
+
   upTime() {
     return this.engine.timing.timestamp;
   }
 
-  nextTick(delta) {
-    Runner.tick(this.runner, this.engine, delta);
+  smoothUpdate(delta) {
+    Engine.update(this.engine, delta, delta/this.lastDelta)
+    this.lastDelta = delta;
   }
 
   createComposite(options) {
@@ -44,8 +53,7 @@ export class MJSWrapper {
   }
 
   addToComposite(composite, ...elements) {
-    Composite.add(composite, ...elements)
-    return composite  
+    Composite.add(composite, ...elements) 
   }
 
   addConstraint(options, composite=null) {
@@ -141,7 +149,7 @@ export class MJSWrapper {
     }
 
     return [segments, constraints]
-  } 
+  }
 
   setWorldBounds(w, h, boundsThickness) {
     this.bounds = this.constructor.getBounds(w, h, boundsThickness)
@@ -156,7 +164,6 @@ export class MJSWrapper {
     this.engine.enabled = false;
   }
 
-  static
   setVelocity(body, vecV) {
     Body.setVelocity(body, vecV);
   }
@@ -166,7 +173,6 @@ export class MJSWrapper {
     Body.applyForce(body, body.position, vecF)
   }
 
-  static
   getApplyForceToCenter(body) {
     return function(vecF) {
       Body.applyForce(body, body.position, vecF)
@@ -190,3 +196,6 @@ export class MJSWrapper {
   }
 
 }
+
+const MJSW = new MJSWrapper();
+export default MJSW;

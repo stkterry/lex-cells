@@ -1,5 +1,6 @@
 import OrgEnv from "../../../libs/classes/org-env/orgEnv";
 import { CS } from "./orgConfig";
+import MJSW from "../../../libs/classes/MJSWrapper";
 
 import CCapture from "ccapture.js";
 
@@ -19,7 +20,7 @@ const testSketch = (p) => {
   var startStopEngine;
   var startStopEngineBool = true;
 
-  var framesContainer = new Array(30).fill(30);
+  var framesContainer = new Array(15).fill(60);
 
   p.setup = () => {
     p.disableFriendlyErrors = true;
@@ -46,7 +47,6 @@ const testSketch = (p) => {
     orgEnv = new OrgEnv(p, CS.w, CS.h);
     orgEnv.addNOrgs(50);
 
-    // orgEnv.mjsi.run()
   }
 
   p.draw = () => {
@@ -55,12 +55,11 @@ const testSketch = (p) => {
       startRecording = false;
     }
 
-    p.background(0);
-    orgEnv.drawOrgs();
-    
     if (startStopEngineBool) {
+      MJSW.smoothUpdate(1100 / avgFrameRate())
       orgEnv.updateEnv();
-      orgEnv.mjsi.nextTick(p.millis() / p.getFrameRate())
+      p.background(0);
+      orgEnv.drawOrgs();
     }
 
   
@@ -73,11 +72,14 @@ const testSketch = (p) => {
     if (recording) {
       capturer.capture(document.getElementById("defaultCanvas0"))
     }
+
   }
 
   function debugNextFrame() {
+    MJSW.smoothUpdate(1100 / avgFrameRate())
     orgEnv.updateEnv();
-    orgEnv.mjsi.nextTick(p.frameRate() / 60)
+    p.background(0);
+    orgEnv.drawOrgs();
   }
 
   function start_stop() {
@@ -91,8 +93,8 @@ const testSketch = (p) => {
   }
 
   function avgFrameRate() {
-    framesContainer[p.frameCount % 30] = p.frameRate();
-    return framesContainer.reduce((a, b) => a + b, 0) / 30;
+    framesContainer[p.frameCount % 15] = p.frameRate();
+    return framesContainer.reduce((a, b) => a + b, 0) / 15;
   }
 
 

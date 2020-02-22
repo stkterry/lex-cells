@@ -1,6 +1,6 @@
 // Gene types, red, green, black, gray, yellow, blue, cyan, white 
 import { cellScale, GeneDefaults, colorCodes } from "./org-cfg";
-import { MJSWrapper } from "../matterHelpers";
+import MJSW from "../MJSWrapper";
 
 import xorshiro128 from "../../PRNG/xoshiro128";
 const prng = xorshiro128('gene-func');
@@ -95,7 +95,7 @@ function YellowExpression({ length }) {
 
 function CyanExpression({ length, parentCell }) {
   var lim = GeneDefaults.maxVel * (length / (1 + length));
-  const applyForce = MJSWrapper.getApplyForceToCenter(parentCell.nucleus.body)
+  const applyForce = MJSW.getApplyForceToCenter(parentCell.nucleus.body)
   let activation = {
     active: {
       cyan: {
@@ -105,7 +105,7 @@ function CyanExpression({ length, parentCell }) {
           let dy = parentCell.pos.y - this.otherCell.pos.y;
           let fNorm = GeneDefaults.recoilVel / Math.sqrt(dx * dx + dy * dy);
           let vecV = { x: dx * fNorm, y: dy * fNorm };
-          MJSWrapper.setVelocity(parentCell.nucleus.body, vecV);
+          MJSW.setVelocity(parentCell.nucleus.body, vecV);
 
           parentCell.dEvents.cyan = 10;
         },

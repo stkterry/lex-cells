@@ -11,8 +11,8 @@
     "dev": "concurrently \"npm run sass\" \"npm start\""
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "StevenKT",
+  "license": "LGPLv3",
   "devDependencies": {
     "@babel/core": "^7.8.4",
     "@babel/preset-env": "^7.8.4",
@@ -39,5 +39,9 @@
     "react-router-dom": "^5.1.2",
     "shortid": "^2.2.15",
     "simplex-noise": "^2.4.0"
+  },
+  "engines": {
+    "node": ">=10.0.0",
+    "npm": ">=6.0.0"
   }
 }
